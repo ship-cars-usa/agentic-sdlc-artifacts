@@ -1,0 +1,23 @@
+# event-catalog.subscriptions.tsv
+#
+# Static subscription→topic lookup table for Python services that only see
+# subscription names via env vars (e.g., os.environ.get("FOO_SUBSCRIPTION")).
+# Format (tab-separated, three columns):
+#
+#     subscription_env_var<TAB>topic_name<TAB>source
+#
+# - `subscription_env_var` matches the env-var name as it appears in the source
+#   (e.g., `COMPANY_DOCUMENTS_SUBSCRIPTION`). May also be a literal subscription
+#   resource name (e.g., `projects/ship-cars/subscriptions/foo-sub`).
+# - `topic_name` is the canonical Pub/Sub topic name backing the subscription
+#   (resolve via `gcloud pubsub subscriptions describe <sub> --format='value(topic)'`).
+# - `source` is a short tag describing where the mapping came from
+#   (`gcloud-2026-05-15`, `manual`, `repo-config`, etc.).
+#
+# Regenerate with: python3 ~/projects/codebase-map/scripts/refresh_subscription_map.py
+# (requires `gcloud auth application-default login` and a GCP project set).
+#
+# Until populated, the generator marks affected rows in event-catalog.md as
+# Status: symbolic. That's expected and informative — flag it in the seed-review pass.
+#
+# subscription_env_var	topic_name	source

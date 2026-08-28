@@ -1,0 +1,72 @@
+---
+repo: synclink-backend
+path: ~/projects/ship-cars-usa/synclink-backend
+stack: Java/Quarkus 3.27.0, Java 21
+domain: integrations
+shape: single-module
+last-synced-commit: f006a87c1d3c4b0eafc3f66805af11a5879aa2a3
+last-synced-date: 2026-08-28
+maintainer: unknown
+status: seed
+---
+
+# synclink-backend
+
+## What it is
+Quarkus / Java 21 single-module service (package `cars.ship.synclink`) that is the **API endpoint for the SyncLink Chrome extension**. The extension scrapes SuperDispatch orders from the browser and bulk-pushes them; synclink stores each as a `LoadStateEntity` (JSONB payload + SHA-256 content hash over a **curated field set**), and only when the content hash actually changed does it propagate the load to `posting-backend` through the `impersonator`. Multi-tenant via `company_id`; per-request user attribution via a `ThreadLocal` `ActorContext` that flows into Hibernate Envers revisions. Since the last sync only the `posting-dtos` client lib was bumped (1.28.0 → 1.49.0, LITE-8046) — no behavioral source change.
+
+## How it fits
+- Consumes API of: `impersonator` (and through it `posting-backend`) via `ImpersonatorServiceClient` (`@RegisterRestClient`, configKey `impersonator-service`); **no `connect-timeout`/`read-timeout` configured** (fleet default). Consumes SuperDispatch order shapes as input (`SuperDispatchOrderDto`).
+- Publishes events to: none (no Pub/Sub producer).
+- Subscribes to: none (no Pub/Sub consumer). The "sync" is a REST-triggered / cronjob backstop, not a queue.
+- Owns data store: PostgreSQL (`synclink` db). `load_state` table + Hibernate Envers audit (`load_state_aud`, `revinfo` extended with an `actor` column via `CustomRevisionListener`). Flyway migrations.
+
+## Build / test / run
+```
+./mvnw clean package -DskipTests
+./mvnw quarkus:dev
+# Single-module Quarkus
+# Endpoints:
+#   POST /api/load-state                       -> LoadStateResource.bulkUpsert (extension push)
+#   POST /api/internal/sync/loads              -> InternalSyncResource.syncLoads (cronjob: retry pending)
+#   POST /api/internal/sync/loads/{publicId}   -> InternalSyncResource.syncSingleLoad
+```
+
+## Key abstractions
+- `LoadStateResource` — `resource/.../LoadStateResource.java` — `POST /api/load-state` bulk upsert from the extension.
+- `InternalSyncResource` — `resource/.../InternalSyncResource.java` — `POST /api/internal/sync/loads` (retry all pending) and `POST /api/internal/sync/loads/{publicId}` (single-load resync), for the k8s cronjob.
+- `LoadStateEntity` — `entity/.../LoadStateEntity.java` — `@Audited` JPA entity: `load_id`, `reference_id`, `company_id`, `user_id`, `last_payload_json` (JSONB), `current_hash`(64), `last_posted_hash`(64). "Needs sync" = `current_hash != last_posted_hash or last_posted_hash is null`.
+- `HashableOrderFields` — `util/.../HashableOrderFields.java` — `computeHash(SuperDispatchOrderDto)` extracts a fixed `HASHABLE_FIELD_PATHS` array (curated meaningful fields), serializes to JSON, SHA-256s it. Change detection is over this curated set, not the raw payload.
+- `ActorContext` — `util/.../ActorContext.java` — `record ActorContext(String actor)` in a `ThreadLocal`; `remove()` for thread-pool safety; captured into Envers revisions by `CustomRevisionListener`.
+- `ImpersonatorServiceClient` — `client/.../ImpersonatorServiceClient.java` — outbound REST to impersonator → posting-backend.
+
+## Don't-do-here / gotchas
+- **No retry on `posting-backend`/`impersonator` failure** — the client exception bubbles up to the extension as an HTTP error; the extension must re-push. The `/internal/sync` route is a backstop, not a durable queue.
+- **Hash is over a curated field set, not the whole payload** — `HashableOrderFields.HASHABLE_FIELD_PATHS` must be kept in sync with the fields that actually matter downstream; a meaningful field missing from the list means real changes never propagate (silent staleness), not spurious propagation. Verify the list when SuperDispatch shapes change.
+- **`ActorContext` `ThreadLocal` cleanup must be unconditional** — if `remove()` is skipped on an exception path, the next request on the same worker inherits the previous user's `actor` in the audit trail.
+- **`POST /api/load-state` accepts an unbounded array** — cap server-side to avoid heap pressure on large extension pushes.
+- **`user_id`/actor is trusted as passed** — if the gateway strips the header, audit rows get a null actor. Assert at the boundary.
+- **Multi-tenancy is query-filter-only** (`findByLoadIdAndCompanyId`), no DB row-level security — a query-builder bug could leak cross-tenant data.
+
+## Relevant ADRs / docs
+- `~/projects/codebase-map/repos/synclink-chrome-extension.md` — paired browser client.
+- `~/projects/codebase-map/repos/posting-backend.md` — sole downstream sink.
+- `~/projects/codebase-map/repos/impersonator.md` — auth flow.
+- `~/projects/codebase-map/domains/integrations.md`.
+
+
+<!-- entities-begin -->
+## Entities
+
+Auto-generated by `scripts/cluster_entities.py`. Domain classes declared in this repo:
+
+| Class | Kind | Module | Catalog canonical |
+|---|---|---|---|
+| `LoadStateEntity` | jpa | `synclink-backend` | LoadState |
+| `BulkLoadStateResponse` | dto | `synclink-backend` | BulkLoadState |
+| `LoadSearchResponse` | dto | `synclink-backend` | LoadSearch |
+| `LoadStateUpdateRequest` | dto | `synclink-backend` | LoadStateUpdate |
+| `LoadStateUpsertResult` | dto | `synclink-backend` | LoadStateUpsertResult |
+| `SuperDispatchOrderDto` | dto | `synclink-backend` | SuperDispatchOrder |
+| `SyncResult` | dto | `synclink-backend` | SyncResult |
+<!-- entities-end -->

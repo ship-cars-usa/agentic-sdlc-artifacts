@@ -1,0 +1,56 @@
+<!--
+Shadow doc template — one file per repo at codebase-map/repos/<repo>.md.
+Replace every <bracketed> placeholder. Fields:
+
+  repo                  Folder name under ~/projects/ship-cars-usa/.
+  path                  Full path; must exist on disk.
+  stack                 Short tech tag, e.g. "Java/Quarkus 3.10, Maven multi-module".
+  domain                Logical domain (payments, auctions, ...). "unassigned" until phase 4.
+  shape                 single-module | multi-module
+  last-synced-commit    git -C <path> rev-parse HEAD at sync time.
+  last-synced-date      YYYY-MM-DD on the same day.
+  maintainer            Team name or "unknown".
+  status                seed | stub | verified | stale
+                          seed     = hand-authored from review material; richest content
+                          stub     = bootstrap_repo_md.py output; thin but accurate
+                          verified = a human re-reviewed and confirmed
+                          stale    = drift_check.py flagged divergence
+
+Body sections are guidance; trim or extend as needed.
+-->
+---
+repo: <repo-name>
+path: ~/projects/ship-cars-usa/<repo-name>
+stack: <Java/Quarkus 3.x | Java/Spring Boot 3.x | ...>
+domain: unassigned
+shape: <single-module|multi-module>
+last-synced-commit: <40-char SHA>
+last-synced-date: <YYYY-MM-DD>
+maintainer: unknown
+status: <seed|stub|verified|stale>
+---
+
+# <repo-name>
+
+## What it is
+<One paragraph: what this service does and why it exists. State only what's visible in the repo; mark assumptions explicitly.>
+
+## How it fits
+- Consumes API of: <repos or "none observed">
+- Publishes events to: <Kafka topics / Pub/Sub / "none observed">
+- Owns data store: <Postgres schema | Mongo collection | "none">
+- Owns no data; pure orchestrator: <true|false>
+
+## Build / test / run
+```
+<commands taken from README, Makefile, or pom.xml>
+```
+
+## Key abstractions
+- `<ClassOrPackage>` — `<src/main/java/.../File.java>` — <one-line role>
+
+## Don't-do-here / gotchas
+- <surprising behavior, foot-guns, things that bit a reviewer>
+
+## Relevant ADRs / docs
+- <pointer; e.g. ~/projects/quarkus-fleet-review-2026-05-07.md#aaag-integration>

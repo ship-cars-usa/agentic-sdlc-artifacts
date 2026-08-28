@@ -1,0 +1,36 @@
+{
+  "//": "VS Code multi-root workspace covering the 30 backend services seeded in v1.",
+  "//": "Open with: code ~/projects/codebase-map/workspaces/all-backend.code-workspace",
+  "//": "When more services get shadow docs, add their folders here (or split into payments.code-workspace etc.).",
+  "folders": [
+    { "name": "_codebase-map",    "path": "../" },
+    { "name": "_projects-root",   "path": "../../" },
+    { "name": "aaag-integration",         "path": "../../ship-cars-usa/aaag-integration" },
+    { "name": "ai-dashboard-backend",     "path": "../../ship-cars-usa/ai-dashboard-backend" },
+    { "name": "bi-databricks-backend",    "path": "../../ship-cars-usa/bi-databricks-backend" },
+    { "name": "chat-backend",             "path": "../../ship-cars-usa/chat-backend" },
+    { "name": "contract-pricing-backend", "path": "../../ship-cars-usa/contract-pricing-backend" },
+    { "name": "integrations-backend",     "path": "../../ship-cars-usa/integrations-backend" },
+    { "name": "integrators-data-bridge",  "path": "../../ship-cars-usa/integrators-data-bridge" }
+  ],
+  "settings": {
+    "files.exclude": {
+      "**/target": true,
+      "**/.idea": true,
+      "**/node_modules": true
+    },
+    "search.exclude": {
+      "**/target": true,
+      "**/build": true,
+      "**/dist": true
+    }
+  },
+  "extensions": {
+    "recommendations": [
+      "redhat.java",
+      "redhat.vscode-quarkus",
+      "vscjava.vscode-maven",
+      "anthropic.claude-code"
+    ]
+  }
+}

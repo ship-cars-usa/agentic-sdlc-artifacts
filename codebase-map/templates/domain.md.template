@@ -1,0 +1,38 @@
+<!--
+Domain rollup template — one file per logical domain at codebase-map/domains/<domain>.md.
+Populated in Phase 4 once shadow docs have a `domain:` value to group by.
+-->
+---
+domain: <name>
+status: <draft|active>
+owner-team: <team or "unknown">
+member-services: <count>
+last-reviewed: <YYYY-MM-DD>
+---
+
+# Domain — <Name>
+
+## Purpose
+<What business capability this domain provides.>
+
+## Member services
+| Repo | Role | Stack |
+|---|---|---|
+| <repo> | <role> | <stack> |
+
+## Key flows
+<Numbered, step-by-step flows that traverse multiple services. Each step names the service and the action.>
+
+## Data stores
+- <Postgres / Mongo / Kafka / Pub/Sub / Redis> — <which services touch it, in what mode>
+
+## Cross-cutting concerns
+- Auth: <how>
+- Telemetry: <how>
+- On-call: <rotation or "unknown">
+
+## Open questions / known gaps
+- <items needing investigation>
+
+## Related ADRs
+- <pointers>

@@ -1,0 +1,33 @@
+# Backstage Component schema (v1) — used in Phase 3 to generate
+# codebase-map/catalog/components/<repo>.yaml entries.
+#
+# Mirrors what the Quarkiverse `quarkus-backstage` extension would emit
+# at build time, but stored centrally per the no-files-in-repos constraint.
+# If/when Backstage is stood up, this catalog can be ingested via a Location
+# entity that points at codebase-map/catalog/.
+#
+# Reference: https://backstage.io/docs/features/software-catalog/descriptor-format
+
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: <repo-name>
+  description: <one-line role>
+  annotations:
+    github.com/project-slug: ship-cars-usa/<repo-name>
+    backstage.io/source-location: url:https://github.com/ship-cars-usa/<repo-name>
+  tags:
+    - <tag>
+spec:
+  type: service           # service | website | library | other
+  lifecycle: production   # experimental | production | deprecated
+  owner: <team or "unknown">
+  system: <domain-name>   # references a System entity in catalog/systems/
+  dependsOn:
+    - component:<other-repo>
+    - resource:<db-or-queue-name>
+  providesApis:
+    - <repo-name>-rest
+    - <repo-name>-events
+  consumesApis:
+    - <other-repo>-rest

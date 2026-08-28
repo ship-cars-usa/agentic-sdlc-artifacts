@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Entity Representations Across Repos</title>
+<meta name="generator" content="gen_entity_representations.py">
+<meta name="generated" content="2026-05-15">
+<style>
+  :root {
+    --bg: #0f1115;
+    --panel: #161922;
+    --panel-2: #1c2030;
+    --border: #2a2f3e;
+    --text: #e6e8ee;
+    --muted: #8a92a6;
+    --link: #7cc4ff;
+    --accent: #ffb454;
+    --edge: #3a4257;
+    --edge-hi: #ffb454;
+    --kind-jpa: #5cdb95;
+    --kind-dto: #6cb3ff;
+    --kind-embedded: #c08bff;
+    --kind-other: #687085;
+    --d-listings-trade: #5cdb95;
+    --d-operations: #6cb3ff;
+    --d-pricing-billing: #ffb454;
+    --d-integrations: #c08bff;
+    --d-identity: #ff7eb6;
+    --d-communication: #ffd166;
+    --d-platform: #7fd1c9;
+    --d-analytics: #aab4ff;
+    --d-infrastructure: #687085;
+    --d-unassigned: #8a92a6;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; height: 100%; background: var(--bg); color: var(--text); font: 14px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; overflow: hidden; }
+  header {
+    padding: 12px 20px;
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap;
+    height: 50px;
+  }
+  header h1 { margin: 0; font-size: 15px; font-weight: 600; }
+  header .meta { color: var(--muted); font-size: 11px; }
+  header .controls { display: flex; gap: 10px; align-items: center; margin-left: auto; }
+  header .ctl-group { display: flex; gap: 4px; align-items: center; font-size: 12px; color: var(--muted); }
+  header .ctl-group input[type="range"] { width: 100px; }
+  header input[type=search] {
+    padding: 5px 10px;
+    border: 1px solid var(--border);
+    background: var(--panel-2);
+    color: var(--text);
+    border-radius: 6px;
+    font: inherit;
+    font-size: 12px;
+    width: 220px;
+  }
+  main { display: grid; grid-template-columns: 1fr 360px; height: calc(100vh - 51px); }
+  #graph-host {
+    position: relative;
+    overflow: hidden;
+    background:
+      radial-gradient(circle at 20% 30%, rgba(108, 179, 255, 0.05), transparent 50%),
+      radial-gradient(circle at 80% 70%, rgba(255, 180, 84, 0.05), transparent 50%),
+      var(--bg);
+  }
+  svg.graph { width: 100%; height: 100%; cursor: grab; }
+  svg.graph.dragging { cursor: grabbing; }
+  .edge { stroke: var(--edge); stroke-opacity: 0.45; fill: none;
+          transition: stroke 200ms, stroke-opacity 200ms, stroke-width 200ms; }
+  .edge.hi { stroke: var(--edge-hi); stroke-opacity: 0.95; }
+  .edge.dim { stroke-opacity: 0.05; }
+  .node { cursor: pointer; transition: opacity 200ms; }
+  .node circle, .node rect {
+    stroke: #0f1115;
+    stroke-width: 1.5;
+    transition: stroke 200ms, stroke-width 200ms;
+  }
+  .node.entity circle { fill-opacity: 0.92; }
+  .node.repo rect { fill-opacity: 0.85; }
+  .node.hi circle, .node.hi rect { stroke: var(--edge-hi); stroke-width: 2.5; }
+  .node.dim { opacity: 0.15; }
+  .node text {
+    fill: var(--text);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    pointer-events: none;
+    text-anchor: middle;
+    paint-order: stroke;
+    stroke: #0f1115;
+    stroke-width: 3;
+    stroke-linejoin: round;
+  }
+  .node.entity text { font-size: 12px; font-weight: 600; }
+  .node.repo text { font-size: 10px; }
+  .pulse {
+    animation: pulse 1.6s ease-in-out infinite;
+    transform-origin: center;
+    transform-box: fill-box;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 0.55; transform: scale(1); }
+    50%      { opacity: 1.00; transform: scale(1.18); }
+  }
+  aside.detail {
+    background: var(--panel);
+    border-left: 1px solid var(--border);
+    overflow-y: auto;
+    padding: 14px 16px;
+  }
+  aside.detail h2 { margin: 0 0 4px; font-size: 16px; }
+  aside.detail .sub { color: var(--muted); font-size: 11px; margin-bottom: 12px; }
+  aside.detail .stats { display: grid; grid-template-columns: max-content 1fr; gap: 3px 12px; font-size: 12px; margin-bottom: 14px; }
+  aside.detail .stats .k { color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; font-size: 10px; align-self: center; }
+  aside.detail .stats .v { font-family: ui-monospace, monospace; word-break: break-all; }
+  aside.detail h3 { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin: 16px 0 6px; }
+  aside.detail .repo-group {
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 10px;
+    margin-bottom: 8px;
+    background: var(--panel-2);
+  }
+  aside.detail .repo-group .repo-name {
+    font-family: ui-monospace, monospace;
+    font-size: 12px;
+    color: var(--link);
+    cursor: pointer;
+    margin-bottom: 4px;
+    font-weight: 600;
+  }
+  aside.detail .repo-group .repo-name:hover { text-decoration: underline; }
+  aside.detail .variant {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: ui-monospace, monospace;
+    font-size: 11px;
+    margin: 2px 0;
+  }
+  aside.detail .kind-badge {
+    display: inline-block;
+    font-size: 9px;
+    padding: 1px 5px;
+    border-radius: 3px;
+    color: #0f1115;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    min-width: 50px;
+    text-align: center;
+  }
+  aside.detail .kind-jpa      { background: var(--kind-jpa); }
+  aside.detail .kind-dto      { background: var(--kind-dto); }
+  aside.detail .kind-embedded { background: var(--kind-embedded); }
+  aside.detail .kind-other    { background: var(--kind-other); color: #c7cbd5; }
+  aside.detail .variant .class { color: var(--text); }
+  aside.detail .variant .field-count { color: var(--muted); font-size: 10px; }
+  aside.detail .variant .module { color: var(--muted); font-size: 10px; }
+  aside.detail .dom-badge {
+    display: inline-block;
+    font-size: 9px;
+    padding: 1px 5px;
+    border-radius: 3px;
+    color: #0f1115;
+    background: var(--d-unassigned);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+    margin-right: 3px;
+  }
+  aside.detail .dom-badge[data-d="listings-trade"]  { background: var(--d-listings-trade); }
+  aside.detail .dom-badge[data-d="operations"]      { background: var(--d-operations); }
+  aside.detail .dom-badge[data-d="pricing-billing"] { background: var(--d-pricing-billing); }
+  aside.detail .dom-badge[data-d="integrations"]    { background: var(--d-integrations); }
+  aside.detail .dom-badge[data-d="identity"]        { background: var(--d-identity); }
+  aside.detail .dom-badge[data-d="communication"]   { background: var(--d-communication); }
+  aside.detail .dom-badge[data-d="platform"]        { background: var(--d-platform); }
+  aside.detail .dom-badge[data-d="analytics"]       { background: var(--d-analytics); }
+  aside.detail .dom-badge[data-d="infrastructure"]  { background: var(--d-infrastructure); color: #c7cbd5; }
+  aside.detail .empty { color: var(--muted); padding-top: 30px; text-align: center; }
+  aside.detail .empty .legend-block {
+    text-align: left;
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    margin: 16px 0;
+    font-size: 11px;
+  }
+  aside.detail .legend-row { display: flex; align-items: center; gap: 6px; margin: 3px 0; }
+  aside.detail .shape-dot { width: 12px; height: 12px; border-radius: 50%; }
+  aside.detail .shape-sq  { width: 12px; height: 8px; border-radius: 2px; }
+  .hud {
+    position: absolute;
+    top: 12px; right: 12px;
+    background: rgba(22, 25, 34, 0.85);
+    backdrop-filter: blur(8px);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-size: 11px;
+    color: var(--muted);
+    pointer-events: none;
+  }
+  .summary-bar {
+    position: absolute;
+    bottom: 12px; left: 12px; right: 12px;
+    background: rgba(22, 25, 34, 0.85);
+    backdrop-filter: blur(8px);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 14px;
+    font-size: 11px;
+    color: var(--muted);
+    pointer-events: none;
+    display: flex;
+    gap: 16px;
+  }
+  .summary-bar strong { color: var(--text); font-weight: 600; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Entity Representations Across Repos</h1>
+  <span class="meta">bipartite · <span id="entity-count"></span> entities · <span id="repo-count"></span> repos · <span id="edge-count"></span> connections · generated 2026-05-15</span>
+  <div class="controls">
+    <input type="search" id="q" placeholder="Highlight entity or repo…" autocomplete="off">
+    <div class="ctl-group">
+      <label for="top-slider">Top entities <span id="top-val">15</span></label>
+      <input type="range" id="top-slider" min="5" max="50" step="1" value="15">
+    </div>
+    <div class="ctl-group">
+      <label for="edge-slider">min variants <span id="edge-val">1</span></label>
+      <input type="range" id="edge-slider" min="1" max="6" step="1" value="1">
+    </div>
+  </div>
+</header>
+<main>
+  <div id="graph-host">
+    <svg class="graph" id="graph"></svg>
+    <div class="hud">circles = canonical entities · rectangles = repos · click a node to drill in</div>
+    <div class="summary-bar" id="summary-bar"></div>
+  </div>
+  <aside class="detail" id="detail">
+    <div class="empty">
+      <div style="font-size: 36px; margin-bottom: 8px;">⊙ ⬚</div>
+      <p><strong>Click a node</strong> to see how an entity is represented across repos — or which entities a repo hosts.</p>
+      <div class="legend-block">
+        <div style="color:var(--muted); text-transform:uppercase; letter-spacing:0.5px; font-size:9px; margin-bottom:6px;">Legend</div>
+        <div class="legend-row"><span class="shape-dot" style="background:var(--d-listings-trade)"></span> circle = canonical entity (color = primary domain)</div>
+        <div class="legend-row"><span class="shape-sq" style="background:var(--d-operations)"></span> rounded rect = repo (color = repo domain)</div>
+        <div class="legend-row"><span class="kind-badge kind-jpa">jpa</span> &nbsp;<span class="kind-badge kind-dto">dto</span> &nbsp;<span class="kind-badge kind-embedded">embedded</span> &nbsp;<span class="kind-badge kind-other">other</span></div>
+      </div>
+      <p style="font-size: 11px;">Edge thickness = number of variant classes that repo declares for that entity.</p>
+    </div>
+  </aside>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+<script>
+const ENTITY_NODES = [{"id": "E:Company", "type": "entity", "name": "Company", "rank": 1, "variants": 42, "repos": 18, "primary_domain": "listings-trade", "domains": ["communication", "identity", "integrations", "listings-trade", "operations", "platform", "pricing-billing"], "owning": "chat-backend", "has_page": true, "kind_breakdown": {"jpa": 14, "dto": 28}}, {"id": "E:Vehicle", "type": "entity", "name": "Vehicle", "rank": 2, "variants": 42, "repos": 20, "primary_domain": "listings-trade", "domains": ["communication", "integrations", "listings-trade", "operations", "platform", "pricing-billing"], "owning": "autoims-backend", "has_page": true, "kind_breakdown": {"dto": 33, "jpa": 8, "other": 1}}, {"id": "E:User", "type": "entity", "name": "User", "rank": 3, "variants": 39, "repos": 18, "primary_domain": "listings-trade", "domains": ["communication", "identity", "integrations", "listings-trade", "operations", "platform"], "owning": "autoims-backend", "has_page": true, "kind_breakdown": {"dto": 29, "jpa": 10}}, {"id": "E:Attachment", "type": "entity", "name": "Attachment", "rank": 4, "variants": 25, "repos": 10, "primary_domain": "listings-trade", "domains": ["communication", "identity", "integrations", "listings-trade", "operations", "platform"], "owning": "attachment-backend", "has_page": true, "kind_breakdown": {"dto": 20, "jpa": 5}}, {"id": "E:Location", "type": "entity", "name": "Location", "rank": 5, "variants": 25, "repos": 15, "primary_domain": "listings-trade", "domains": ["communication", "integrations", "listings-trade", "operations", "platform", "pricing-billing"], "owning": "autoims-backend", "has_page": true, "kind_breakdown": {"dto": 22, "jpa": 3}}, {"id": "E:Load", "type": "entity", "name": "Load", "rank": 6, "variants": 25, "repos": 9, "primary_domain": "listings-trade", "domains": ["communication", "listings-trade", "operations", "platform"], "owning": "driveaway-backend", "has_page": true, "kind_breakdown": {"dto": 19, "jpa": 5, "other": 1}}, {"id": "E:Trip", "type": "entity", "name": "Trip", "rank": 7, "variants": 21, "repos": 6, "primary_domain": "listings-trade", "domains": ["integrations", "listings-trade", "operations", "platform", "pricing-billing"], "owning": "cube", "has_page": true, "kind_breakdown": {"dto": 18, "jpa": 2, "other": 1}}, {"id": "E:Posting", "type": "entity", "name": "Posting", "rank": 8, "variants": 16, "repos": 7, "primary_domain": "listings-trade", "domains": ["integrations", "listings-trade", "operations", "platform"], "owning": "cube", "has_page": true, "kind_breakdown": {"dto": 15, "jpa": 1}}, {"id": "E:Offer", "type": "entity", "name": "Offer", "rank": 9, "variants": 16, "repos": 5, "primary_domain": "listings-trade", "domains": ["listings-trade", "operations", "platform"], "owning": "cube", "has_page": true, "kind_breakdown": {"dto": 14, "jpa": 2}}, {"id": "E:GpsPosition", "type": "entity", "name": "GpsPosition", "rank": 10, "variants": 14, "repos": 7, "primary_domain": "listings-trade", "domains": ["integrations", "listings-trade", "operations", "platform"], "owning": "cube", "has_page": true, "kind_breakdown": {"dto": 13, "embedded": 1}}, {"id": "E:Negotiation", "type": "entity", "name": "Negotiation", "rank": 11, "variants": 13, "repos": 6, "primary_domain": "listings-trade", "domains": ["integrations", "listings-trade", "operations", "platform"], "owning": "cube", "has_page": true, "kind_breakdown": {"dto": 12, "jpa": 1}}, {"id": "E:Contact", "type": "entity", "name": "Contact", "rank": 12, "variants": 9, "repos": 7, "primary_domain": "listings-trade", "domains": ["integrations", "listings-trade", "operations", "platform", "pricing-billing"], "owning": "command-executor", "has_page": true, "kind_breakdown": {"dto": 7, "jpa": 2}}, {"id": "E:VehicleSpecification", "type": "entity", "name": "VehicleSpecification", "rank": 13, "variants": 14, "repos": 4, "primary_domain": "listings-trade", "domains": ["listings-trade", "platform"], "owning": "cube", "has_page": true, "kind_breakdown": {"dto": 14}}, {"id": "E:Quote", "type": "entity", "name": "Quote", "rank": 14, "variants": 13, "repos": 3, "primary_domain": "listings-trade", "domains": ["listings-trade", "pricing-billing"], "owning": "loadbuilder-backend", "has_page": true, "kind_breakdown": {"dto": 12, "jpa": 1}}, {"id": "E:Driver", "type": "entity", "name": "Driver", "rank": 15, "variants": 11, "repos": 3, "primary_domain": "listings-trade", "domains": ["listings-trade", "operations", "platform"], "owning": "driveaway-backend", "has_page": true, "kind_breakdown": {"dto": 8, "jpa": 3}}, {"id": "E:CompanyConfig", "type": "entity", "name": "CompanyConfig", "rank": 16, "variants": 10, "repos": 5, "primary_domain": "pricing-billing", "domains": ["analytics", "integrations", "pricing-billing"], "owning": "autoims-backend", "has_page": true, "kind_breakdown": {"dto": 6, "jpa": 4}}, {"id": "E:Transaction", "type": "entity", "name": "Transaction", "rank": 17, "variants": 9, "repos": 4, "primary_domain": "listings-trade", "domains": ["listings-trade", "platform", "pricing-billing"], "owning": "invoices", "has_page": true, "kind_breakdown": {"jpa": 4, "dto": 5}}, {"id": "E:DateRange", "type": "entity", "name": "DateRange", "rank": 18, "variants": 8, "repos": 5, "primary_domain": "listings-trade", "domains": ["listings-trade", "operations", "platform"], "owning": "inventory-backend", "has_page": true, "kind_breakdown": {"dto": 8}}, {"id": "E:State", "type": "entity", "name": "State", "rank": 19, "variants": 7, "repos": 4, "primary_domain": "pricing-billing", "domains": ["analytics", "platform", "pricing-billing"], "owning": "ai-dashboard-backend", "has_page": true, "kind_breakdown": {"dto": 4, "jpa": 3}}, {"id": "E:ActivityLog", "type": "entity", "name": "ActivityLog", "rank": 20, "variants": 7, "repos": 4, "primary_domain": "listings-trade", "domains": ["communication", "listings-trade", "platform"], "owning": "cube", "has_page": true, "kind_breakdown": {"dto": 6, "jpa": 1}}, {"id": "E:Filter", "type": "entity", "name": "Filter", "rank": 21, "variants": 5, "repos": 5, "primary_domain": "listings-trade", "domains": ["communication", "integrations", "listings-trade", "pricing-billing"], "owning": "autoims-backend", "has_page": true, "kind_breakdown": {"dto": 5}}, {"id": "E:FileContent", "type": "entity", "name": "FileContent", "rank": 22, "variants": 5, "repos": 5, "primary_domain": "listings-trade", "domains": ["identity", "listings-trade", "operations", "platform"], "owning": "driveaway-backend", "has_page": true, "kind_breakdown": {"dto": 5}}, {"id": "E:Message", "type": "entity", "name": "Message", "rank": 23, "variants": 5, "repos": 4, "primary_domain": "operations", "domains": ["communication", "operations", "platform", "pricing-billing"], "owning": "invoices", "has_page": true, "kind_breakdown": {"dto": 5}}, {"id": "E:DateDetail", "type": "entity", "name": "DateDetail", "rank": 24, "variants": 6, "repos": 3, "primary_domain": "listings-trade", "domains": ["listings-trade", "operations", "platform"], "owning": "models-lib", "has_page": true, "kind_breakdown": {"dto": 5, "jpa": 1}}, {"id": "E:SavedSearch", "type": "entity", "name": "SavedSearch", "rank": 25, "variants": 6, "repos": 3, "primary_domain": "listings-trade", "domains": ["integrations", "listings-trade", "operations"], "owning": "saved-search-handler", "has_page": true, "kind_breakdown": {"dto": 5, "jpa": 1}}, {"id": "E:Paged", "type": "entity", "name": "Paged", "rank": 26, "variants": 4, "repos": 4, "primary_domain": "listings-trade", "domains": ["identity", "listings-trade", "platform", "pricing-billing"], "owning": "dataone", "has_page": false, "kind_breakdown": {"dto": 4}}, {"id": "E:Contract", "type": "entity", "name": "Contract", "rank": 27, "variants": 5, "repos": 3, "primary_domain": "listings-trade", "domains": ["listings-trade", "platform", "pricing-billing"], "owning": "contract-pricing-backend", "has_page": false, "kind_breakdown": {"dto": 4, "jpa": 1}}, {"id": "E:City", "type": "entity", "name": "City", "rank": 28, "variants": 6, "repos": 3, "primary_domain": "platform", "domains": ["analytics", "platform"], "owning": "ai-dashboard-backend", "has_page": false, "kind_breakdown": {"dto": 3, "jpa": 3}}, {"id": "E:LoadLocationSharingState", "type": "entity", "name": "LoadLocationSharingState", "rank": 29, "variants": 6, "repos": 2, "primary_domain": "operations", "domains": ["operations", "platform"], "owning": "location-history-backend", "has_page": false, "kind_breakdown": {"dto": 5, "jpa": 1}}, {"id": "E:Image", "type": "entity", "name": "Image", "rank": 30, "variants": 4, "repos": 3, "primary_domain": "listings-trade", "domains": ["integrations", "listings-trade", "platform"], "owning": "cube", "has_page": false, "kind_breakdown": {"dto": 4}}, {"id": "E:Notification", "type": "entity", "name": "Notification", "rank": 31, "variants": 4, "repos": 4, "primary_domain": "listings-trade", "domains": ["listings-trade", "operations", "pricing-billing"], "owning": "driveaway-backend", "has_page": false, "kind_breakdown": {"jpa": 1, "dto": 3}}, {"id": "E:Metadata", "type": "entity", "name": "Metadata", "rank": 32, "variants": 4, "repos": 3, "primary_domain": "operations", "domains": ["integrations", "operations", "platform"], "owning": "driveaway-backend", "has_page": false, "kind_breakdown": {"dto": 3, "jpa": 1}}, {"id": "E:PubSubMessage", "type": "entity", "name": "PubSubMessage", "rank": 33, "variants": 4, "repos": 4, "primary_domain": "listings-trade", "domains": ["communication", "listings-trade", "platform"], "owning": "loadboard-backend", "has_page": false, "kind_breakdown": {"dto": 4}}, {"id": "E:Note", "type": "entity", "name": "Note", "rank": 34, "variants": 5, "repos": 2, "primary_domain": "listings-trade", "domains": ["integrations", "listings-trade"], "owning": "autoims-backend", "has_page": false, "kind_breakdown": {"dto": 3, "jpa": 2}}, {"id": "E:PaymentDetails", "type": "entity", "name": "PaymentDetails", "rank": 35, "variants": 5, "repos": 3, "primary_domain": "listings-trade", "domains": ["listings-trade", "platform"], "owning": "commons", "has_page": false, "kind_breakdown": {"dto": 4, "jpa": 1}}, {"id": "E:Order", "type": "entity", "name": "Order", "rank": 36, "variants": 5, "repos": 4, "primary_domain": "listings-trade", "domains": ["listings-trade", "pricing-billing"], "owning": "cube", "has_page": false, "kind_breakdown": {"dto": 5}}, {"id": "E:ManagedServiceProvider", "type": "entity", "name": "ManagedServiceProvider", "rank": 37, "variants": 5, "repos": 2, "primary_domain": "listings-trade", "domains": ["listings-trade", "pricing-billing"], "owning": "loadbuilder-backend", "has_page": false, "kind_breakdown": {"dto": 4, "jpa": 1}}, {"id": "E:ShippingItem", "type": "entity", "name": "ShippingItem", "rank": 38, "variants": 5, "repos": 2, "primary_domain": "listings-trade", "domains": ["listings-trade", "operations"], "owning": "posting-backend", "has_page": false, "kind_breakdown": {"jpa": 1, "dto": 4}}, {"id": "E:Config", "type": "entity", "name": "Config", "rank": 39, "variants": 3, "repos": 3, "primary_domain": "listings-trade", "domains": ["integrations", "listings-trade", "operations"], "owning": "autoims-backend", "has_page": false, "kind_breakdown": {"dto": 3}}, {"id": "E:CompanyEvent", "type": "entity", "name": "CompanyEvent", "rank": 40, "variants": 3, "repos": 3, "primary_domain": "listings-trade", "domains": ["communication", "listings-trade", "pricing-billing"], "owning": "chat-backend", "has_page": false, "kind_breakdown": {"dto": 3}}, {"id": "E:UserContext", "type": "entity", "name": "UserContext", "rank": 41, "variants": 3, "repos": 3, "primary_domain": "pricing-billing", "domains": ["integrations", "platform", "pricing-billing"], "owning": "commons", "has_page": false, "kind_breakdown": {"dto": 3}}, {"id": "E:CtmsOfferActivityLog", "type": "entity", "name": "CtmsOfferActivityLog", "rank": 42, "variants": 3, "repos": 3, "primary_domain": "listings-trade", "domains": ["integrations", "listings-trade", "platform"], "owning": "cube", "has_page": false, "kind_breakdown": {"dto": 3}}, {"id": "E:LoadLocationLog", "type": "entity", "name": "LoadLocationLog", "rank": 43, "variants": 3, "repos": 3, "primary_domain": "listings-trade", "domains": ["listings-trade", "operations", "platform"], "owning": "cube", "has_page": false, "kind_breakdown": {"dto": 2, "jpa": 1}}, {"id": "E:EmailMessage", "type": "entity", "name": "EmailMessage", "rank": 44, "variants": 3, "repos": 3, "primary_domain": "listings-trade", "domains": ["listings-trade", "operations", "pricing-billing"], "owning": "driveaway-backend", "has_page": false, "kind_breakdown": {"dto": 3}}, {"id": "E:Invoice", "type": "entity", "name": "Invoice", "rank": 45, "variants": 3, "repos": 3, "primary_domain": "pricing-billing", "domains": ["integrations", "platform", "pricing-billing"], "owning": "integrations-backend", "has_page": false, "kind_breakdown": {"dto": 2, "jpa": 1}}, {"id": "E:CtmsGeoPoint", "type": "entity", "name": "CtmsGeoPoint", "rank": 46, "variants": 3, "repos": 3, "primary_domain": "listings-trade", "domains": ["integrations", "listings-trade", "operations"], "owning": "load-recommender", "has_page": false, "kind_breakdown": {"dto": 3}}, {"id": "E:Sort", "type": "entity", "name": "Sort", "rank": 47, "variants": 3, "repos": 3, "primary_domain": "listings-trade", "domains": ["identity", "listings-trade", "pricing-billing"], "owning": "posting-backend", "has_page": false, "kind_breakdown": {"dto": 3}}, {"id": "E:CompanyVo", "type": "entity", "name": "CompanyVo", "rank": 48, "variants": 3, "repos": 3, "primary_domain": "operations", "domains": ["communication", "operations", "pricing-billing"], "owning": "pusher", "has_page": false, "kind_breakdown": {"dto": 3}}, {"id": "E:UnitUpdate", "type": "entity", "name": "UnitUpdate", "rank": 49, "variants": 4, "repos": 2, "primary_domain": "listings-trade", "domains": ["integrations", "listings-trade"], "owning": "autoims-backend", "has_page": false, "kind_breakdown": {"dto": 4}}, {"id": "E:LineItem", "type": "entity", "name": "LineItem", "rank": 50, "variants": 4, "repos": 3, "primary_domain": "listings-trade", "domains": ["listings-trade", "pricing-billing"], "owning": "contract-pricing-backend", "has_page": false, "kind_breakdown": {"dto": 4}}];
+const REPO_NODES   = [{"id": "R:ai-dashboard-backend", "type": "repo", "name": "ai-dashboard-backend", "primary_domain": "analytics", "canonical_count": 2, "variant_count": 4}, {"id": "R:attachment-backend", "type": "repo", "name": "attachment-backend", "primary_domain": "platform", "canonical_count": 1, "variant_count": 3}, {"id": "R:autoims-backend", "type": "repo", "name": "autoims-backend", "primary_domain": "integrations", "canonical_count": 8, "variant_count": 14}, {"id": "R:bi-databricks-backend", "type": "repo", "name": "bi-databricks-backend", "primary_domain": "analytics", "canonical_count": 1, "variant_count": 2}, {"id": "R:chat-backend", "type": "repo", "name": "chat-backend", "primary_domain": "communication", "canonical_count": 4, "variant_count": 4}, {"id": "R:command-executor", "type": "repo", "name": "command-executor", "primary_domain": "integrations", "canonical_count": 1, "variant_count": 1}, {"id": "R:commons", "type": "repo", "name": "commons", "primary_domain": "platform", "canonical_count": 2, "variant_count": 2}, {"id": "R:contract-pricing-backend", "type": "repo", "name": "contract-pricing-backend", "primary_domain": "pricing-billing", "canonical_count": 7, "variant_count": 12}, {"id": "R:crm-workflows", "type": "repo", "name": "crm-workflows", "primary_domain": "platform", "canonical_count": 2, "variant_count": 4}, {"id": "R:cube", "type": "repo", "name": "cube", "primary_domain": "listings-trade", "canonical_count": 16, "variant_count": 28}, {"id": "R:dataone", "type": "repo", "name": "dataone", "primary_domain": "platform", "canonical_count": 2, "variant_count": 3}, {"id": "R:driveaway-backend", "type": "repo", "name": "driveaway-backend", "primary_domain": "operations", "canonical_count": 9, "variant_count": 13}, {"id": "R:fraud-detector", "type": "repo", "name": "fraud-detector", "primary_domain": "pricing-billing", "canonical_count": 1, "variant_count": 1}, {"id": "R:integration-executor", "type": "repo", "name": "integration-executor", "primary_domain": "integrations", "canonical_count": 3, "variant_count": 3}, {"id": "R:integrations-backend", "type": "repo", "name": "integrations-backend", "primary_domain": "integrations", "canonical_count": 3, "variant_count": 3}, {"id": "R:inventory-backend", "type": "repo", "name": "inventory-backend", "primary_domain": "listings-trade", "canonical_count": 12, "variant_count": 16}, {"id": "R:invoices", "type": "repo", "name": "invoices", "primary_domain": "pricing-billing", "canonical_count": 8, "variant_count": 9}, {"id": "R:load-bookmark-backend", "type": "repo", "name": "load-bookmark-backend", "primary_domain": "listings-trade", "canonical_count": 2, "variant_count": 2}, {"id": "R:load-recommender", "type": "repo", "name": "load-recommender", "primary_domain": "listings-trade", "canonical_count": 4, "variant_count": 6}, {"id": "R:loadboard-backend", "type": "repo", "name": "loadboard-backend", "primary_domain": "listings-trade", "canonical_count": 13, "variant_count": 49}, {"id": "R:loadbuilder-backend", "type": "repo", "name": "loadbuilder-backend", "primary_domain": "listings-trade", "canonical_count": 8, "variant_count": 9}, {"id": "R:location-history-backend", "type": "repo", "name": "location-history-backend", "primary_domain": "operations", "canonical_count": 6, "variant_count": 10}, {"id": "R:location-provider", "type": "repo", "name": "location-provider", "primary_domain": "operations", "canonical_count": 3, "variant_count": 5}, {"id": "R:metadata", "type": "repo", "name": "metadata", "primary_domain": "platform", "canonical_count": 2, "variant_count": 3}, {"id": "R:models-lib", "type": "repo", "name": "models-lib", "primary_domain": "platform", "canonical_count": 25, "variant_count": 65}, {"id": "R:notification-backend", "type": "repo", "name": "notification-backend", "primary_domain": "communication", "canonical_count": 3, "variant_count": 6}, {"id": "R:notification-orchestrator", "type": "repo", "name": "notification-orchestrator", "primary_domain": "communication", "canonical_count": 2, "variant_count": 4}, {"id": "R:payment-backend", "type": "repo", "name": "payment-backend", "primary_domain": "pricing-billing", "canonical_count": 3, "variant_count": 6}, {"id": "R:posting-backend", "type": "repo", "name": "posting-backend", "primary_domain": "listings-trade", "canonical_count": 26, "variant_count": 80}, {"id": "R:public-tracking-backend", "type": "repo", "name": "public-tracking-backend", "primary_domain": "operations", "canonical_count": 8, "variant_count": 12}, {"id": "R:pubsub-exception-handler", "type": "repo", "name": "pubsub-exception-handler", "primary_domain": "platform", "canonical_count": 1, "variant_count": 1}, {"id": "R:pusher", "type": "repo", "name": "pusher", "primary_domain": "communication", "canonical_count": 9, "variant_count": 13}, {"id": "R:quarkus-imperative-boilerplate", "type": "repo", "name": "quarkus-imperative-boilerplate", "primary_domain": "platform", "canonical_count": 2, "variant_count": 4}, {"id": "R:quarkus-k8s-boilerplate", "type": "repo", "name": "quarkus-k8s-boilerplate", "primary_domain": "platform", "canonical_count": 2, "variant_count": 4}, {"id": "R:quarkus-user-syncer", "type": "repo", "name": "quarkus-user-syncer", "primary_domain": "integrations", "canonical_count": 2, "variant_count": 2}, {"id": "R:quote-manager-backend", "type": "repo", "name": "quote-manager-backend", "primary_domain": "pricing-billing", "canonical_count": 12, "variant_count": 27}, {"id": "R:saved-search-handler", "type": "repo", "name": "saved-search-handler", "primary_domain": "listings-trade", "canonical_count": 4, "variant_count": 7}, {"id": "R:spring-commons", "type": "repo", "name": "spring-commons", "primary_domain": "platform", "canonical_count": 1, "variant_count": 1}, {"id": "R:syncer", "type": "repo", "name": "syncer", "primary_domain": "integrations", "canonical_count": 9, "variant_count": 10}, {"id": "R:trip-planner", "type": "repo", "name": "trip-planner", "primary_domain": "operations", "canonical_count": 14, "variant_count": 25}, {"id": "R:user-backend", "type": "repo", "name": "user-backend", "primary_domain": "identity", "canonical_count": 6, "variant_count": 13}, {"id": "R:uship-quotes", "type": "repo", "name": "uship-quotes", "primary_domain": "pricing-billing", "canonical_count": 5, "variant_count": 7}];
+const EDGES        = [{"source": "E:State", "target": "R:ai-dashboard-backend", "weight": 2, "variants": [{"class_name": "StateDto", "kind": "dto", "module": "ai-dashboard-backend", "field_count": 0}, {"class_name": "StateEntity", "kind": "jpa", "module": "ai-dashboard-backend", "field_count": 2}]}, {"source": "E:City", "target": "R:ai-dashboard-backend", "weight": 2, "variants": [{"class_name": "CityDto", "kind": "dto", "module": "ai-dashboard-backend", "field_count": 0}, {"class_name": "CityEntity", "kind": "jpa", "module": "ai-dashboard-backend", "field_count": 1}]}, {"source": "E:Attachment", "target": "R:attachment-backend", "weight": 3, "variants": [{"class_name": "Attachment", "kind": "dto", "module": "db-entities", "field_count": 15}, {"class_name": "AttachmentDto", "kind": "dto", "module": "api-dtos", "field_count": 0}, {"class_name": "AttachmentEntity", "kind": "jpa", "module": "db-entities", "field_count": 11}]}, {"source": "E:CompanyConfig", "target": "R:autoims-backend", "weight": 2, "variants": [{"class_name": "CompanyConfigDto", "kind": "dto", "module": "api-dtos", "field_count": 0}, {"class_name": "CompanyConfigDbEntity", "kind": "jpa", "module": "db-entities", "field_count": 28}]}, {"source": "E:UnitUpdate", "target": "R:autoims-backend", "weight": 2, "variants": [{"class_name": "AutoImsUnitUpdate", "kind": "dto", "module": "domain", "field_count": 4}, {"class_name": "AutoImsUnitUpdateDto", "kind": "dto", "module": "api-dtos", "field_count": 0}]}, {"source": "E:Vehicle", "target": "R:autoims-backend", "weight": 3, "variants": [{"class_name": "AutoImsUnitDto", "kind": "dto", "module": "api-dtos", "field_count": 0}, {"class_name": "VehicleResponseDto", "kind": "dto", "module": "autoims-mock", "field_count": 0}, {"class_name": "AutoImsUnitDbEntity", "kind": "jpa", "module": "db-entities", "field_count": 28}]}, {"source": "E:Note", "target": "R:autoims-backend", "weight": 3, "variants": [{"class_name": "AutoImsNoteDto", "kind": "dto", "module": "api-dtos", "field_count": 0}, {"class_name": "NoteResponseDto", "kind": "dto", "module": "autoims-mock", "field_count": 0}, {"class_name": "AutoImsNoteDbEntity", "kind": "jpa", "module": "db-entities", "field_count": 5}]}, {"source": "E:Filter", "target": "R:autoims-backend", "weight": 1, "variants": [{"class_name": "AutoImsFilterDto", "kind": "dto", "module": "api-dtos", "field_count": 0}]}, {"source": "E:Config", "target": "R:autoims-backend", "weight": 1, "variants": [{"class_name": "AutoImsConfig", "kind": "dto", "module": "shared-services", "field_count": 24}]}, {"source": "E:Location", "target": "R:autoims-backend", "weight": 1, "variants": [{"class_name": "LocationDto", "kind": "dto", "module": "autoims-mock", "field_count": 0}]}, {"source": "E:User", "target": "R:autoims-backend", "weight": 1, "variants": [{"class_name": "User", "kind": "dto", "module": "domain", "field_count": 0}]}, {"source": "E:CompanyConfig", "target": "R:bi-databricks-backend", "weight": 2, "variants": [{"class_name": "CompanyConfigDto", "kind": "dto", "module": "bi-databricks-backend", "field_count": 0}, {"class_name": "CompanyConfig", "kind": "jpa", "module": "bi-databricks-backend", "field_count": 5}]}, {"source": "E:CompanyEvent", "target": "R:chat-backend", "weight": 1, "variants": [{"class_name": "CompanyEventPubSubDto", "kind": "dto", "module": "chat-backend", "field_count": 1}]}, {"source": "E:Company", "target": "R:chat-backend", "weight": 1, "variants": [{"class_name": "Company", "kind": "jpa", "module": "chat-backend", "field_count": 7}]}, {"source": "E:Filter", "target": "R:chat-backend", "weight": 1, "variants": [{"class_name": "Filter", "kind": "dto", "module": "chat-backend", "field_count": 3}]}, {"source": "E:User", "target": "R:chat-backend", "weight": 1, "variants": [{"class_name": "User", "kind": "dto", "module": "chat-backend", "field_count": 6}]}, {"source": "E:Contact", "target": "R:command-executor", "weight": 1, "variants": [{"class_name": "ContactDto", "kind": "dto", "module": "api-dtos", "field_count": 0}]}, {"source": "E:UserContext", "target": "R:commons", "weight": 1, "variants": [{"class_name": "UserContextDto", "kind": "dto", "module": "commons", "field_count": 0}]}, {"source": "E:PaymentDetails", "target": "R:commons", "weight": 1, "variants": [{"class_name": "PaymentDetailsDto", "kind": "dto", "module": "commons", "field_count": 0}]}, {"source": "E:Company", "target": "R:contract-pricing-backend", "weight": 4, "variants": [{"class_name": "CarrierDto", "kind": "dto", "module": "contract-pricing-dtos", "field_count": 0}, {"class_name": "CustomerDto", "kind": "dto", "module": "contract-pricing-dtos", "field_count": 0}, {"class_name": "CarrierEntity", "kind": "jpa", "module": "db-entities", "field_count": 8}, {"class_name": "CustomerEntity", "kind": "jpa", "module": "db-entities", "field_count": 10}]}, {"source": "E:State", "target": "R:contract-pricing-backend", "weight": 1, "variants": [{"class_name": "StateDto", "kind": "dto", "module": "contract-pricing-dtos", "field_count": 0}]}, {"source": "E:Contract", "target": "R:contract-pricing-backend", "weight": 2, "variants": [{"class_name": "ContractDto", "kind": "dto", "module": "contract-pricing-dtos", "field_count": 0}, {"class_name": "ContractEntity", "kind": "jpa", "module": "db-entities", "field_count": 6}]}, {"source": "E:Vehicle", "target": "R:contract-pricing-backend", "weight": 1, "variants": [{"class_name": "VehicleDto", "kind": "dto", "module": "contract-pricing-dtos", "field_count": 0}]}, {"source": "E:Location", "target": "R:contract-pricing-backend", "weight": 2, "variants": [{"class_name": "LocationDto", "kind": "dto", "module": "contract-pricing-dtos", "field_count": 0}, {"class_name": "LocationEntity", "kind": "jpa", "module": "db-entities", "field_count": 3}]}, {"source": "E:LineItem", "target": "R:contract-pricing-backend", "weight": 1, "variants": [{"class_name": "LineItemDto", "kind": "dto", "module": "contract-pricing-dtos", "field_count": 0}]}, {"source": "E:CompanyEvent", "target": "R:contract-pricing-backend", "weight": 1, "variants": [{"class_name": "CompanyEventPubSubDto", "kind": "dto", "module": "services", "field_count": 0}]}, {"source": "E:User", "target": "R:crm-workflows", "weight": 2, "variants": [{"class_name": "AccountDto", "kind": "dto", "module": "api-dtos", "field_count": 0}, {"class_name": "AccountResponseDto", "kind": "dto", "module": "api-dtos", "field_count": 0}]}, {"source": "E:Company", "target": "R:crm-workflows", "weight": 2, "variants": [{"class_name": "Company", "kind": "dto", "module": "services", "field_count": 19}, {"class_name": "CompanyEntity", "kind": "jpa", "module": "db-entities", "field_count": 14}]}, {"source": "E:Trip", "target": "R:cube", "weight": 3, "variants": [{"class_name": "Route", "kind": "dto", "module": "loadboard", "field_count": 2}, {"class_name": "TripDto", "kind": "dto", "module": "ctms-orders", "field_count": 3}, {"class_name": "TripReadDto", "kind": "dto", "module": "loadboard", "field_count": 3}]}, {"source": "E:VehicleSpecification", "target": "R:cube", "weight": 4, "variants": [{"class_name": "SpecificationDto", "kind": "dto", "module": "ctms-orders", "field_count": 2}, {"class_name": "SpecificationReadDto", "kind": "dto", "module": "loadboard", "field_count": 2}, {"class_name": "SpecificationsDto", "kind": "dto", "module": "ctms-orders", "field_count": 4}, {"class_name": "SpecificationsReadDto", "kind": "dto", "module": "loadboard", "field_count": 4}]}, {"source": "E:Company", "target": "R:cube", "weight": 1, "variants": [{"class_name": "CompanyDto", "kind": "dto", "module": "loadboard", "field_count": 2}]}, {"source": "E:GpsPosition", "target": "R:cube", "weight": 5, "variants": [{"class_name": "Coordinates", "kind": "dto", "module": "loadboard", "field_count": 2}, {"class_name": "CoordinatesDto", "kind": "dto", "module": "core", "field_count": 0}, {"class_name": "GeoPointDto", "kind": "dto", "module": "ctms-orders", "field_count": 2}, {"class_name": "GeoPointReadDto", "kind": "dto", "module": "loadboard", "field_count": 2}, {"class_name": "GeoPointReadDto", "kind": "dto", "module": "core", "field_count": 2}]}, {"source": "E:Negotiation", "target": "R:cube", "weight": 2, "variants": [{"class_name": "NegotiationReadDto", "kind": "dto", "module": "loadboard", "field_count": 18}, {"class_name": "V1NegotiationReadDto", "kind": "dto", "module": "loadboard", "field_count": 17}]}, {"source": "E:Posting", "target": "R:cube", "weight": 2, "variants": [{"class_name": "PostingReadDto", "kind": "dto", "module": "loadboard", "field_count": 83}, {"class_name": "V1PostingReadDto", "kind": "dto", "module": "loadboard", "field_count": 81}]}, {"source": "E:Offer", "target": "R:cube", "weight": 2, "variants": [{"class_name": "OfferReadDto", "kind": "dto", "module": "loadboard", "field_count": 12}, {"class_name": "V1OfferReadDto", "kind": "dto", "module": "loadboard", "field_count": 8}]}, {"source": "E:CtmsOfferActivityLog", "target": "R:cube", "weight": 1, "variants": [{"class_name": "CtmsOfferActivityLogReadDto", "kind": "dto", "module": "loadboard", "field_count": 4}]}, {"source": "E:Order", "target": "R:cube", "weight": 1, "variants": [{"class_name": "Order", "kind": "dto", "module": "loadboard", "field_count": 2}]}, {"source": "E:LoadLocationLog", "target": "R:cube", "weight": 1, "variants": [{"class_name": "LoadLocationLogReadDto", "kind": "dto", "module": "core", "field_count": 9}]}, {"source": "E:Location", "target": "R:cube", "weight": 1, "variants": [{"class_name": "LocationDto", "kind": "dto", "module": "core", "field_count": 3}]}, {"source": "E:User", "target": "R:cube", "weight": 1, "variants": [{"class_name": "UserEntity", "kind": "jpa", "module": "db-entities", "field_count": 4}]}, {"source": "E:Image", "target": "R:cube", "weight": 1, "variants": [{"class_name": "ImageDto", "kind": "dto", "module": "ctms-orders", "field_count": 2}]}, {"source": "E:ActivityLog", "target": "R:cube", "weight": 1, "variants": [{"class_name": "ActivityLogDto", "kind": "dto", "module": "ctms-orders", "field_count": 13}]}, {"source": "E:Attachment", "target": "R:cube", "weight": 1, "variants": [{"class_name": "AttachmentDto", "kind": "dto", "module": "ctms-orders", "field_count": 28}]}, {"source": "E:Vehicle", "target": "R:cube", "weight": 1, "variants": [{"class_name": "VehicleDto", "kind": "dto", "module": "ctms-orders", "field_count": 1}]}, {"source": "E:Vehicle", "target": "R:dataone", "weight": 2, "variants": [{"class_name": "VehicleDto", "kind": "dto", "module": "api-dtos", "field_count": 15}, {"class_name": "TruckModelEntity", "kind": "other", "module": "db-entities", "field_count": 8}]}, {"source": "E:Paged", "target": "R:dataone", "weight": 1, "variants": [{"class_name": "PagedResponseDto", "kind": "dto", "module": "api-dtos", "field_count": 0}]}, {"source": "E:Driver", "target": "R:driveaway-backend", "weight": 2, "variants": [{"class_name": "DriveawayDriverDto", "kind": "dto", "module": "api-dtos", "field_count": 13}, {"class_name": "DriveawayDriver", "kind": "jpa", "module": "db-entities", "field_count": 13}]}, {"source": "E:Vehicle", "target": "R:driveaway-backend", "weight": 1, "variants": [{"class_name": "VehicleDto", "kind": "dto", "module": "api-dtos", "field_count": 0}]}, {"source": "E:Load", "target": "R:driveaway-backend", "weight": 3, "variants": [{"class_name": "LoadInfo", "kind": "dto", "module": "api-dtos", "field_count": 11}, {"class_name": "PublicLoadDto", "kind": "dto", "module": "api-dtos", "field_count": 6}, {"class_name": "LoadInfoDbEntity", "kind": "jpa", "module": "db-entities", "field_count": 7}]}, {"source": "E:FileContent", "target": "R:driveaway-backend", "weight": 1, "variants": [{"class_name": "FileContent", "kind": "dto", "module": "db-entities", "field_count": 0}]}, {"source": "E:Notification", "target": "R:driveaway-backend", "weight": 1, "variants": [{"class_name": "Notification", "kind": "jpa", "module": "db-entities", "field_count": 11}]}, {"source": "E:Metadata", "target": "R:driveaway-backend", "weight": 1, "variants": [{"class_name": "MetadataEmbedded", "kind": "dto", "module": "db-entities", "field_count": 0}]}, {"source": "E:User", "target": "R:driveaway-backend", "weight": 2, "variants": [{"class_name": "User", "kind": "dto", "module": "domain", "field_count": 0}, {"class_name": "UserEmbedded", "kind": "dto", "module": "db-entities", "field_count": 0}]}, {"source": "E:Config", "target": "R:driveaway-backend", "weight": 1, "variants": [{"class_name": "DriveawayConfig", "kind": "dto", "module": "shared-services", "field_count": 22}]}, {"source": "E:EmailMessage", "target": "R:driveaway-backend", "weight": 1, "variants": [{"class_name": "EmailMessageDto", "kind": "dto", "module": "infra-interfaces", "field_count": 1}]}, {"source": "E:Vehicle", "target": "R:fraud-detector", "weight": 1, "variants": [{"class_name": "VehicleMSRPCacheEntity", "kind": "jpa", "module": "db-entities", "field_count": 2}]}, {"source": "E:Attachment", "target": "R:integration-executor", "weight": 1, "variants": [{"class_name": "Attachment", "kind": "jpa", "module": "db-entities", "field_count": 7}]}, {"source": "E:Image", "target": "R:integration-executor", "weight": 1, "variants": [{"class_name": "Image", "kind": "dto", "module": "event-listener", "field_count": 0}]}, {"source": "E:GpsPosition", "target": "R:integration-executor", "weight": 1, "variants": [{"class_name": "Coordinates", "kind": "dto", "module": "event-listener", "field_count": 0}]}, {"source": "E:UserContext", "target": "R:integrations-backend", "weight": 1, "variants": [{"class_name": "UserContextDto", "kind": "dto", "module": "integrations-backend-dtos", "field_count": 0}]}, {"source": "E:CompanyConfig", "target": "R:integrations-backend", "weight": 1, "variants": [{"class_name": "CompanyConfig", "kind": "dto", "module": "quickbooks", "field_count": 0}]}, {"source": "E:Invoice", "target": "R:integrations-backend", "weight": 1, "variants": [{"class_name": "InvoiceDto", "kind": "dto", "module": "quickbooks", "field_count": 15}]}, {"source": "E:Note", "target": "R:inventory-backend", "weight": 2, "variants": [{"class_name": "AutoImsNoteDto", "kind": "dto", "module": "inventory-dtos", "field_count": 3}, {"class_name": "AutoImsNoteDbEntity", "kind": "jpa", "module": "db-entities", "field_count": 4}]}, {"source": "E:LineItem", "target": "R:inventory-backend", "weight": 2, "variants": [{"class_name": "LineItemDto", "kind": "dto", "module": "inventory-dtos", "field_count": 4}, {"class_name": "LineItemEmbedded", "kind": "dto", "module": "db-entities", "field_count": 0}]}, {"source": "E:Vehicle", "target": "R:inventory-backend", "weight": 2, "variants": [{"class_name": "InventoryUnitDto", "kind": "dto", "module": "inventory-dtos", "field_count": 94}, {"class_name": "InventoryUnitDbEntity", "kind": "jpa", "module": "db-entities", "field_count": 52}]}, {"source": "E:Config", "target": "R:inventory-backend", "weight": 1, "variants": [{"class_name": "InventoryConfig", "kind": "dto", "module": "shared-services", "field_count": 21}]}, {"source": "E:VehicleSpecification", "target": "R:inventory-backend", "weight": 1, "variants": [{"class_name": "VehicleSpecificationDto", "kind": "dto", "module": "infra-interfaces", "field_count": 0}]}, {"source": "E:EmailMessage", "target": "R:inventory-backend", "weight": 1, "variants": [{"class_name": "EmailMessageDto", "kind": "dto", "module": "infra-interfaces", "field_count": 3}]}, {"source": "E:DateRange", "target": "R:inventory-backend", "weight": 1, "variants": [{"class_name": "DateRangeDto", "kind": "dto", "module": "inventory-dtos", "field_count": 3}]}, {"source": "E:UnitUpdate", "target": "R:inventory-backend", "weight": 2, "variants": [{"class_name": "InventoryUnitUpdate", "kind": "dto", "module": "domain", "field_count": 18}, {"class_name": "InventoryUnitUpdateDto", "kind": "dto", "module": "inventory-dtos", "field_count": 38}]}, {"source": "E:Company", "target": "R:inventory-backend", "weight": 1, "variants": [{"class_name": "CustomerDto", "kind": "dto", "module": "inventory-dtos", "field_count": 0}]}, {"source": "E:Filter", "target": "R:inventory-backend", "weight": 1, "variants": [{"class_name": "InventoryFilterDto", "kind": "dto", "module": "inventory-dtos", "field_count": 12}]}, {"source": "E:Location", "target": "R:inventory-backend", "weight": 1, "variants": [{"class_name": "LocationDto", "kind": "dto", "module": "inventory-dtos", "field_count": 0}]}, {"source": "E:User", "target": "R:inventory-backend", "weight": 1, "variants": [{"class_name": "User", "kind": "dto", "module": "domain", "field_count": 0}]}, {"source": "E:Message", "target": "R:invoices", "weight": 1, "variants": [{"class_name": "MessageDto", "kind": "dto", "module": "api-dtos", "field_count": 0}]}, {"source": "E:Location", "target": "R:invoices", "weight": 1, "variants": [{"class_name": "LocationEntity", "kind": "jpa", "module": "db-entities", "field_count": 5}]}, {"source": "E:Contact", "target": "R:invoices", "weight": 1, "variants": [{"class_name": "ContactEntity", "kind": "jpa", "module": "db-entities", "field_count": 7}]}, {"source": "E:Transaction", "target": "R:invoices", "weight": 2, "variants": [{"class_name": "ChargeEntity", "kind": "jpa", "module": "db-entities", "field_count": 6}, {"class_name": "TransactionEntity", "kind": "jpa", "module": "db-entities", "field_count": 13}]}, {"source": "E:Invoice", "target": "R:invoices", "weight": 1, "variants": [{"class_name": "InvoiceEntity", "kind": "jpa", "module": "db-entities", "field_count": 39}]}, {"source": "E:Company", "target": "R:invoices", "weight": 1, "variants": [{"class_name": "CompanyEntity", "kind": "jpa", "module": "db-entities", "field_count": 4}]}, {"source": "E:Vehicle", "target": "R:invoices", "weight": 1, "variants": [{"class_name": "VehicleEntity", "kind": "jpa", "module": "db-entities", "field_count": 8}]}, {"source": "E:EmailMessage", "target": "R:invoices", "weight": 1, "variants": [{"class_name": "EmailMessageDto", "kind": "dto", "module": "services", "field_count": 4}]}, {"source": "E:Posting", "target": "R:load-bookmark-backend", "weight": 1, "variants": [{"class_name": "PostingDto", "kind": "dto", "module": "api-dtos", "field_count": 1}]}, {"source": "E:Vehicle", "target": "R:load-bookmark-backend", "weight": 1, "variants": [{"class_name": "VehicleDto", "kind": "dto", "module": "api-dtos", "field_count": 6}]}, {"source": "E:Load", "target": "R:load-recommender", "weight": 1, "variants": [{"class_name": "LoadDto", "kind": "dto", "module": "api-dtos", "field_count": 44}]}, {"source": "E:User", "target": "R:load-recommender", "weight": 2, "variants": [{"class_name": "DbUser", "kind": "dto", "module": "db-syncer", "field_count": 7}, {"class_name": "UserEntity", "kind": "jpa", "module": "db-entities", "field_count": 7}]}, {"source": "E:Company", "target": "R:load-recommender", "weight": 2, "variants": [{"class_name": "DbCompany", "kind": "dto", "module": "db-syncer", "field_count": 7}, {"class_name": "CompanyEntity", "kind": "jpa", "module": "db-entities", "field_count": 4}]}, {"source": "E:CtmsGeoPoint", "target": "R:load-recommender", "weight": 1, "variants": [{"class_name": "CtmsGeoPointDto", "kind": "dto", "module": "services", "field_count": 1}]}, {"source": "E:Posting", "target": "R:loadboard-backend", "weight": 6, "variants": [{"class_name": "CtmsPostingPubSubDto", "kind": "dto", "module": "services", "field_count": 174}, {"class_name": "Posting", "kind": "dto", "module": "services", "field_count": 55}, {"class_name": "PostingDto", "kind": "dto", "module": "api-dtos", "field_count": 28}, {"class_name": "PostingPubSubDto", "kind": "dto", "module": "api-dtos", "field_count": 55}, {"class_name": "PostingReadDto", "kind": "dto", "module": "api-dtos", "field_count": 46}, {"class_name": "PostingEntity", "kind": "jpa", "module": "db-entities", "field_count": 77}]}, {"source": "E:DateRange", "target": "R:loadboard-backend", "weight": 2, "variants": [{"class_name": "DateRange", "kind": "dto", "module": "services", "field_count": 0}, {"class_name": "DateRangeDto", "kind": "dto", "module": "api-dtos", "field_count": 2}]}, {"source": "E:PaymentDetails", "target": "R:loadboard-backend", "weight": 3, "variants": [{"class_name": "PaymentDetailsDto", "kind": "dto", "module": "api-dtos", "field_count": 10}, {"class_name": "PaymentDetailsPubSubDto", "kind": "dto", "module": "api-dtos", "field_count": 10}, {"class_name": "PaymentDetailsReadDto", "kind": "dto", "module": "api-dtos", "field_count": 10}]}, {"source": "E:Attachment", "target": "R:loadboard-backend", "weight": 6, "variants": [{"class_name": "Attachment", "kind": "dto", "module": "services", "field_count": 8}, {"class_name": "AttachmentDto", "kind": "dto", "module": "api-dtos", "field_count": 4}, {"class_name": "AttachmentPubSubDto", "kind": "dto", "module": "api-dtos", "field_count": 8}, {"class_name": "AttachmentReadDto", "kind": "dto", "module": "api-dtos", "field_count": 8}, {"class_name": "CtmsAttachmentPubSubDto", "kind": "dto", "module": "services", "field_count": 14}, {"class_name": "AttachmentEntity", "kind": "jpa", "module": "db-entities", "field_count": 4}]}, {"source": "E:Company", "target": "R:loadboard-backend", "weight": 6, "variants": [{"class_name": "Company", "kind": "dto", "module": "services", "field_count": 13}, {"class_name": "Customer", "kind": "dto", "module": "services", "field_count": 20}, {"class_name": "CustomerDto", "kind": "dto", "module": "api-dtos", "field_count": 20}, {"class_name": "CustomerPubSubDto", "kind": "dto", "module": "api-dtos", "field_count": 20}, {"class_name": "CustomerReadDto", "kind": "dto", "module": "api-dtos", "field_count": 20}, {"class_name": "CompanyEntity", "kind": "jpa", "module": "db-entities", "field_count": 12}]}, {"source": "E:Vehicle", "target": "R:loadboard-backend", "weight": 6, "variants": [{"class_name": "CtmsVehiclePubSubDto", "kind": "dto", "module": "services", "field_count": 23}, {"class_name": "Vehicle", "kind": "dto", "module": "services", "field_count": 17}, {"class_name": "VehicleDto", "kind": "dto", "module": "api-dtos", "field_count": 14}, {"class_name": "VehiclePubSubDto", "kind": "dto", "module": "api-dtos", "field_count": 17}, {"class_name": "VehicleReadDto", "kind": "dto", "module": "api-dtos", "field_count": 17}, {"class_name": "VehicleEntity", "kind": "jpa", "module": "db-entities", "field_count": 8}]}, {"source": "E:Offer", "target": "R:loadboard-backend", "weight": 5, "variants": [{"class_name": "Offer", "kind": "dto", "module": "services", "field_count": 18}, {"class_name": "OfferDto", "kind": "dto", "module": "api-dtos", "field_count": 5}, {"class_name": "OfferPubSubDto", "kind": "dto", "module": "api-dtos", "field_count": 0}, {"class_name": "OfferReadDto", "kind": "dto", "module": "api-dtos", "field_count": 17}, {"class_name": "OfferEntity", "kind": "jpa", "module": "db-entities", "field_count": 11}]}, {"source": "E:Negotiation", "target": "R:loadboard-backend", "weight": 5, "variants": [{"class_name": "CtmsNegotiationPubSubDto", "kind": "dto", "module": "services", "field_count": 12}, {"class_name": "Negotiation", "kind": "dto", "module": "services", "field_count": 12}, {"class_name": "NegotiationPubSubDto", "kind": "dto", "module": "api-dtos", "field_count": 0}, {"class_name": "NegotiationReadDto", "kind": "dto", "module": "api-dtos", "field_count": 12}, {"class_name": "NegotiationEntity", "kind": "jpa", "module": "db-entities", "field_count": 7}]}, {"source": "E:VehicleSpecification", "target": "R:loadboard-backend", "weight": 5, "variants": [{"class_name": "SpecificationDto", "kind": "dto", "module": "db-syncer", "field_count": 2}, {"class_name": "VehicleSpecification", "kind": "dto", "module": "services", "field_count": 4}, {"class_name": "VehicleSpecificationDto", "kind": "dto", "module": "services", "field_count": 4}, {"class_name": "VehicleSpecificationPubSubDto", "kind": "dto", "module": "api-dtos", "field_count": 4}, {"class_name": "VehicleSpecificationReadDto", "kind": "dto", "module": "api-dtos", "field_count": 4}]}, {"source": "E:PubSubMessage", "target": "R:loadboard-backend", "weight": 1, "variants": [{"class_name": "PubSubMessageDto", "kind": "dto", "module": "api-dtos", "field_count": 10}]}, {"source": "E:User", "target": "R:loadboard-backend", "weight": 2, "variants": [{"class_name": "User", "kind": "dto", "module": "services", "field_count": 4}, {"class_name": "UserEntity", "kind": "jpa", "module": "db-entities", "field_count": 5}]}, {"source": "E:Location", "target": "R:loadboard-backend", "weight": 1, "variants": [{"class_name": "LocationRequest", "kind": "dto", "module": "services", "field_count": 6}]}, {"source": "E:Notification", "target": "R:loadboard-backend", "weight": 1, "variants": [{"class_name": "Notification", "kind": "dto", "module": "services", "field_count": 3}]}, {"source": "E:Quote", "target": "R:loadbuilder-backend", "weight": 2, "variants": [{"class_name": "QuoteDto", "kind": "dto", "module": "infra", "field_count": 1}, {"class_name": "QuoteRequestDto", "kind": "dto", "module": "infra-interfaces", "field_count": 12}]}, {"source": "E:Load", "target": "R:loadbuilder-backend", "weight": 1, "variants": [{"class_name": "LoadDbEntity", "kind": "other", "module": "db-entities", "field_count": 10}]}, {"source": "E:FileContent", "target": "R:loadbuilder-backend", "weight": 1, "variants": [{"class_name": "FileContentDto", "kind": "dto", "module": "infra-interfaces", "field_count": 0}]}, {"source": "E:ManagedServiceProvider", "target": "R:loadbuilder-backend", "weight": 1, "variants": [{"class_name": "ManagedServiceProviderDto", "kind": "dto", "module": "infra-interfaces", "field_count": 4}]}, {"source": "E:Contact", "target": "R:loadbuilder-backend", "weight": 1, "variants": [{"class_name": "ContactDto", "kind": "dto", "module": "infra-interfaces", "field_count": 17}]}, {"source": "E:Vehicle", "target": "R:loadbuilder-backend", "weight": 1, "variants": [{"class_name": "VehicleDto", "kind": "dto", "module": "infra-interfaces", "field_count": 7}]}, {"source": "E:Order", "target": "R:loadbuilder-backend", "weight": 1, "variants": [{"class_name": "OrderDto", "kind": "dto", "module": "infra-interfaces", "field_count": 11}]}, {"source": "E:User", "target": "R:loadbuilder-backend", "weight": 1, "variants": [{"class_name": "User", "kind": "dto", "module": "domain", "field_count": 0}]}, {"source": "E:LoadLocationSharingState", "target": "R:location-history-backend", "weight": 3, "variants": [{"class_name": "LoadLocationSharingState", "kind": "dto", "module": "api-dtos", "field_count": 0}, {"class_name": "LoadLocationSharingStateDto", "kind": "dto", "module": "api-dtos", "field_count": 0}, {"class_name": "LoadLocationSharingStateEntity", "kind": "jpa", "module": "db-entities", "field_count": 14}]}, {"source": "E:Message", "target": "R:location-history-backend", "weight": 1, "variants": [{"class_name": "MessageDto", "kind": "dto", "module": "api-dtos", "field_count": 17}]}, {"source": "E:GpsPosition", "target": "R:location-history-backend", "weight": 1, "variants": [{"class_name": "CoordinatesDto", "kind": "dto", "module": "api-dtos", "field_count": 0}]}, {"source": "E:Location", "target": "R:location-history-backend", "weight": 3, "variants": [{"class_name": "LocationDto", "kind": "dto", "module": "api-dtos", "field_count": 3}, {"class_name": "LocationResponseDto", "kind": "dto", "module": "api-dtos", "field_count": 0}, {"class_name": "V2LocationDto", "kind": "dto", "module": "api-dtos", "field_count": 0}]}, {"source": "E:Vehicle", "target": "R:location-history-backend", "weight": 1, "variants": [{"class_name": "VehicleEntity", "kind": "jpa", "module": "db-entities", "field_count": 6}]}, {"source": "E:LoadLocationLog", "target": "R:location-history-backend", "weight": 1, "variants": [{"class_name": "LoadLocationLogEntity", "kind": "jpa", "module": "db-entities", "field_count": 5}]}, {"source": "E:Load", "target": "R:location-provider", "weight": 3, "variants": [{"class_name": "LoadDto", "kind": "dto", "module": "api-dtos", "field_count": 0}, {"class_name": "ShipmentDto", "kind": "dto", "module": "api-dtos", "field_count": 0}, {"class_name": "ShipmentModelDto", "kind": "dto", "module": "api-dtos", "field_count": 0}]}, {"source": "E:Vehicle", "target": "R:location-provider", "weight": 1, "variants": [{"class_name": "VehicleDto", "kind": "dto", "module": "api-dtos", "field_count": 0}]}, {"source": "E:Location", "target": "R:location-provider", "weight": 1, "variants": [{"class_name": "LocationDto", "kind": "dto", "module": "api-dtos", "field_count": 0}]}, {"source": "E:Metadata", "target": "R:metadata", "weight": 2, "variants": [{"class_name": "MetadataDto", "kind": "dto", "module": "api-dtos", "field_count": 0}, {"class_name": "MetadataEntity", "kind": "jpa", "module": "db-entities", "field_count": 7}]}, {"source": "E:PubSubMessage", "target": "R:metadata", "weight": 1, "variants": [{"class_name": "PubSubMessageDto", "kind": "dto", "module": "api-dtos", "field_count": 6}]}, {"source": "E:GpsPosition", "target": "R:models-lib", "weight": 3, "variants": [{"class_name": "CoordinatesDto", "kind": "dto", "module": "api-dtos", "field_count": 2}, {"class_name": "GeoPointDto", "kind": "dto", "module": "api-dtos", "field_count": 0}, {"class_name": "GeoPointReadDto", "kind": "dto", "module": "read-models", "field_count": 2}]}, {"source": "E:DateRange", "target": "R:models-lib", "weight": 3, "variants": [{"class_name": "DateRangeDto", "kind": "dto", "module": "api-dtos", "field_count": 2}, {"class_name": "DateRangeDto", "kind": "dto", "module": "data-models", "field_count": 2}, {"class_name": "DateRangeReadDto", "kind": "dto", "module": "read-models", "field_count": 2}]}, {"source": "E:Trip", "target": "R:models-lib", "weight": 5, "variants": [{"class_name": "RouteDto", "kind": "dto", "module": "api-dtos", "field_count": 3}, {"class_name": "RouteReadDto", "kind": "dto", "module": "read-models", "field_count": 15}, {"class_name": "TripDto", "kind": "dto", "module": "api-dtos", "field_count": 15}, {"class_name": "TripDto", "kind": "dto", "module": "data-models", "field_count": 3}, {"class_name": "TripReadDto", "kind": "dto", "module": "read-models", "field_count": 3}]}, {"source": "E:User", "target": "R:models-lib", "weight": 2, "variants": [{"class_name": "UserAccountReadDto", "kind": "dto", "module": "read-models", "field_count": 5}, {"class_name": "UserDto", "kind": "dto", "module": "api-dtos", "field_count": 3}]}, {"source": "E:Posting", "target": "R:models-lib", "weight": 4, "variants": [{"class_name": "CtmsPostingReadDto", "kind": "dto", "module": "read-models", "field_count": 85}, {"class_name": "PostingDto", "kind": "dto", "module": "api-dtos", "field_count": 1}, {"class_name": "PostingDto", "kind": "dto", "module": "data-models", "field_count": 11}, {"class_name": "PostingReadDto", "kind": "dto", "module": "read-models", "field_count": 85}]}, {"source": "E:Vehicle", "target": "R:models-lib", "weight": 6, "variants": [{"class_name": "CtmsVehicleReadDto", "kind": "dto", "module": "read-models", "field_count": 56}, {"class_name": "VehicleDto", "kind": "dto", "module": "api-dtos", "field_count": 5}, {"class_name": "VehicleDto", "kind": "dto", "module": "ml-dtos", "field_count": 0}, {"class_name": "VehicleDto", "kind": "dto", "module": "data-models", "field_count": 64}, {"class_name": "VehicleReadDto", "kind": "dto", "module": "read-models", "field_count": 57}, {"class_name": "VehicleReadDto", "kind": "dto", "module": "read-models", "field_count": 13}]}, {"source": "E:LoadLocationSharingState", "target": "R:models-lib", "weight": 3, "variants": [{"class_name": "LoadLocationSharingStateDto", "kind": "dto", "module": "api-dtos", "field_count": 8}, {"class_name": "LoadLocationSharingStateDto", "kind": "dto", "module": "data-models", "field_count": 0}, {"class_name": "LoadLocationSharingStateReadDto", "kind": "dto", "module": "read-models", "field_count": 8}]}, {"source": "E:Location", "target": "R:models-lib", "weight": 4, "variants": [{"class_name": "LocationDto", "kind": "dto", "module": "api-dtos", "field_count": 2}, {"class_name": "LocationDto", "kind": "dto", "module": "ml-dtos", "field_count": 0}, {"class_name": "LocationReadDto", "kind": "dto", "module": "read-models", "field_count": 1}, {"class_name": "LocationRequestDto", "kind": "dto", "module": "data-models", "field_count": 0}]}, {"source": "E:VehicleSpecification", "target": "R:models-lib", "weight": 4, "variants": [{"class_name": "SpecificationDto", "kind": "dto", "module": "data-models", "field_count": 2}, {"class_name": "SpecificationReadDto", "kind": "dto", "module": "read-models", "field_count": 2}, {"class_name": "SpecificationsDto", "kind": "dto", "module": "data-models", "field_count": 4}, {"class_name": "SpecificationsReadDto", "kind": "dto", "module": "read-models", "field_count": 4}]}, {"source": "E:Image", "target": "R:models-lib", "weight": 2, "variants": [{"class_name": "ImageDto", "kind": "dto", "module": "data-models", "field_count": 2}, {"class_name": "ImageReadDto", "kind": "dto", "module": "read-models", "field_count": 2}]}, {"source": "E:CtmsOfferActivityLog", "target": "R:models-lib", "weight": 1, "variants": [{"class_name": "CtmsOfferActivityLogReadDto", "kind": "dto", "module": "read-models", "field_count": 4}]}, {"source": "E:Negotiation", "target": "R:models-lib", "weight": 3, "variants": [{"class_name": "CtmsNegotiationReadDto", "kind": "dto", "module": "read-models", "field_count": 18}, {"class_name": "NegotiationDto", "kind": "dto", "module": "data-models", "field_count": 21}, {"class_name": "NegotiationReadDto", "kind": "dto", "module": "read-models", "field_count": 20}]}, {"source": "E:Attachment", "target": "R:models-lib", "weight": 4, "variants": [{"class_name": "AttachmentDto", "kind": "dto", "module": "data-models", "field_count": 35}, {"class_name": "AttachmentReadDto", "kind": "dto", "module": "read-models", "field_count": 28}, {"class_name": "AttachmentReadDto", "kind": "dto", "module": "read-models", "field_count": 11}, {"class_name": "CtmsAttachmentReadDto", "kind": "dto", "module": "read-models", "field_count": 28}]}, {"source": "E:Company", "target": "R:models-lib", "weight": 4, "variants": [{"class_name": "CarrierReadDto", "kind": "dto", "module": "read-models", "field_count": 14}, {"class_name": "CompanyDto", "kind": "dto", "module": "data-models", "field_count": 66}, {"class_name": "CompanyReadDto", "kind": "dto", "module": "read-models", "field_count": 55}, {"class_name": "CompanyReadDto", "kind": "dto", "module": "read-models", "field_count": 10}]}, {"source": "E:Load", "target": "R:models-lib", "weight": 3, "variants": [{"class_name": "LoadDto", "kind": "dto", "module": "data-models", "field_count": 255}, {"class_name": "LoadReadDto", "kind": "dto", "module": "read-models", "field_count": 232}, {"class_name": "LoadReadDto", "kind": "dto", "module": "read-models", "field_count": 9}]}, {"source": "E:ActivityLog", "target": "R:models-lib", "weight": 2, "variants": [{"class_name": "ActivityLogDto", "kind": "dto", "module": "data-models", "field_count": 25}, {"class_name": "ActivityLogReadDto", "kind": "dto", "module": "read-models", "field_count": 13}]}, {"source": "E:Offer", "target": "R:models-lib", "weight": 3, "variants": [{"class_name": "CarrierOfferReadDto", "kind": "dto", "module": "read-models", "field_count": 7}, {"class_name": "OfferDto", "kind": "dto", "module": "data-models", "field_count": 18}, {"class_name": "OfferReadDto", "kind": "dto", "module": "read-models", "field_count": 12}]}, {"source": "E:Contract", "target": "R:models-lib", "weight": 1, "variants": [{"class_name": "ContractReadDto", "kind": "dto", "module": "read-models", "field_count": 3}]}, {"source": "E:Driver", "target": "R:models-lib", "weight": 2, "variants": [{"class_name": "DriveawayDriverReadDto", "kind": "dto", "module": "read-models", "field_count": 7}, {"class_name": "DriverReadDto", "kind": "dto", "module": "read-models", "field_count": 8}]}, {"source": "E:DateDetail", "target": "R:models-lib", "weight": 1, "variants": [{"class_name": "DateDetailReadDto", "kind": "dto", "module": "read-models", "field_count": 6}]}, {"source": "E:Contact", "target": "R:models-lib", "weight": 1, "variants": [{"class_name": "ContactReadDto", "kind": "dto", "module": "read-models", "field_count": 13}]}, {"source": "E:Transaction", "target": "R:models-lib", "weight": 1, "variants": [{"class_name": "PaymentReadDto", "kind": "dto", "module": "read-models", "field_count": 8}]}, {"source": "E:LoadLocationLog", "target": "R:models-lib", "weight": 1, "variants": [{"class_name": "LoadLocationLogReadDto", "kind": "dto", "module": "read-models", "field_count": 9}]}, {"source": "E:Invoice", "target": "R:models-lib", "weight": 1, "variants": [{"class_name": "InvoiceDto", "kind": "dto", "module": "data-models", "field_count": 32}]}, {"source": "E:Message", "target": "R:models-lib", "weight": 1, "variants": [{"class_name": "MessageDto", "kind": "dto", "module": "data-models", "field_count": 18}]}, {"source": "E:User", "target": "R:notification-backend", "weight": 3, "variants": [{"class_name": "User", "kind": "dto", "module": "notification-app", "field_count": 2}, {"class_name": "UserAccountDto", "kind": "dto", "module": "notification-app", "field_count": 14}, {"class_name": "UserAccount", "kind": "jpa", "module": "notification-app", "field_count": 4}]}, {"source": "E:Company", "target": "R:notification-backend", "weight": 1, "variants": [{"class_name": "CompanyDto", "kind": "dto", "module": "notification-app", "field_count": 19}]}, {"source": "E:Message", "target": "R:notification-backend", "weight": 2, "variants": [{"class_name": "ChatMessageDto", "kind": "dto", "module": "notification-app", "field_count": 5}, {"class_name": "V1ChatMessageDto", "kind": "dto", "module": "notification-dtos", "field_count": 5}]}, {"source": "E:User", "target": "R:notification-orchestrator", "weight": 2, "variants": [{"class_name": "DbUser", "kind": "dto", "module": "db-syncer", "field_count": 6}, {"class_name": "UserEntity", "kind": "jpa", "module": "db-entities", "field_count": 6}]}, {"source": "E:Company", "target": "R:notification-orchestrator", "weight": 2, "variants": [{"class_name": "DbCompany", "kind": "dto", "module": "db-syncer", "field_count": 4}, {"class_name": "CompanyEntity", "kind": "jpa", "module": "db-entities", "field_count": 2}]}, {"source": "E:CompanyConfig", "target": "R:payment-backend", "weight": 3, "variants": [{"class_name": "CompanyConfigDto", "kind": "dto", "module": "api-dtos", "field_count": 0}, {"class_name": "PublicCompanyConfigDto", "kind": "dto", "module": "api-dtos", "field_count": 0}, {"class_name": "CompanyConfigEntity", "kind": "jpa", "module": "db-entities", "field_count": 4}]}, {"source": "E:Transaction", "target": "R:payment-backend", "weight": 2, "variants": [{"class_name": "TransactionDto", "kind": "dto", "module": "api-dtos", "field_count": 0}, {"class_name": "TransactionEntity", "kind": "jpa", "module": "db-entities", "field_count": 17}]}, {"source": "E:Notification", "target": "R:payment-backend", "weight": 1, "variants": [{"class_name": "PaymentNotificationPubSubDto", "kind": "dto", "module": "api-dtos", "field_count": 0}]}, {"source": "E:Posting", "target": "R:posting-backend", "weight": 1, "variants": [{"class_name": "PostingDto", "kind": "dto", "module": "posting-app", "field_count": 17}]}, {"source": "E:Attachment", "target": "R:posting-backend", "weight": 5, "variants": [{"class_name": "AttachmentDto", "kind": "dto", "module": "posting-app", "field_count": 12}, {"class_name": "AttachmentDto", "kind": "dto", "module": "posting-dtos", "field_count": 5}, {"class_name": "AttachmentPubSubDto", "kind": "dto", "module": "posting-app", "field_count": 7}, {"class_name": "V1AttachmentPubSubDto", "kind": "dto", "module": "posting-dtos", "field_count": 9}, {"class_name": "Attachment", "kind": "jpa", "module": "posting-app", "field_count": 13}]}, {"source": "E:Load", "target": "R:posting-backend", "weight": 8, "variants": [{"class_name": "LoadDto", "kind": "dto", "module": "posting-app", "field_count": 116}, {"class_name": "LoadDto", "kind": "dto", "module": "posting-dtos", "field_count": 8}, {"class_name": "LoadLegPubSubDto", "kind": "dto", "module": "posting-app", "field_count": 42}, {"class_name": "V1LoadLegEventDto", "kind": "dto", "module": "posting-dtos", "field_count": 1}, {"class_name": "V1LoadLegPubSubDto", "kind": "dto", "module": "posting-dtos", "field_count": 24}, {"class_name": "V1LoadPubSubDto", "kind": "dto", "module": "posting-dtos", "field_count": 8}, {"class_name": "Load", "kind": "jpa", "module": "posting-app", "field_count": 13}, {"class_name": "LoadLeg", "kind": "jpa", "module": "posting-app", "field_count": 43}]}, {"source": "E:Offer", "target": "R:posting-backend", "weight": 5, "variants": [{"class_name": "CarrierOfferDto", "kind": "dto", "module": "posting-app", "field_count": 1}, {"class_name": "CarrierOfferDto", "kind": "dto", "module": "posting-dtos", "field_count": 7}, {"class_name": "OfferPubSubDto", "kind": "dto", "module": "posting-app", "field_count": 6}, {"class_name": "V1CarrierOfferPubSubDto", "kind": "dto", "module": "posting-dtos", "field_count": 7}, {"class_name": "CarrierOffer", "kind": "jpa", "module": "posting-app", "field_count": 5}]}, {"source": "E:Driver", "target": "R:posting-backend", "weight": 7, "variants": [{"class_name": "DriveawayDriverDto", "kind": "dto", "module": "posting-dtos", "field_count": 8}, {"class_name": "DriverDto", "kind": "dto", "module": "posting-dtos", "field_count": 8}, {"class_name": "ExternalDriveawayDriverDto", "kind": "dto", "module": "posting-app", "field_count": 5}, {"class_name": "V1DriveawayDriverPubSubDto", "kind": "dto", "module": "posting-dtos", "field_count": 4}, {"class_name": "V1DriverPubSubDto", "kind": "dto", "module": "posting-dtos", "field_count": 6}, {"class_name": "DriveawayDriver", "kind": "jpa", "module": "posting-app", "field_count": 7}, {"class_name": "Driver", "kind": "jpa", "module": "posting-app", "field_count": 3}]}, {"source": "E:Vehicle", "target": "R:posting-backend", "weight": 5, "variants": [{"class_name": "V1VehicleDto", "kind": "dto", "module": "posting-dtos", "field_count": 8}, {"class_name": "V1VehiclePubSubDto", "kind": "dto", "module": "posting-dtos", "field_count": 22}, {"class_name": "VehicleDto", "kind": "dto", "module": "posting-dtos", "field_count": 13}, {"class_name": "VehiclePubSubDto", "kind": "dto", "module": "posting-app", "field_count": 18}, {"class_name": "Vehicle", "kind": "jpa", "module": "posting-app", "field_count": 23}]}, {"source": "E:CompanyEvent", "target": "R:posting-backend", "weight": 1, "variants": [{"class_name": "CompanyEventPubSubDto", "kind": "dto", "module": "posting-app", "field_count": 1}]}, {"source": "E:Negotiation", "target": "R:posting-backend", "weight": 1, "variants": [{"class_name": "NegotiationPubSubDto", "kind": "dto", "module": "posting-app", "field_count": 6}]}, {"source": "E:Location", "target": "R:posting-backend", "weight": 4, "variants": [{"class_name": "LocationDto", "kind": "dto", "module": "posting-dtos", "field_count": 6}, {"class_name": "LocationPubSubDto", "kind": "dto", "module": "posting-app", "field_count": 2}, {"class_name": "V1LocationPubSubDto", "kind": "dto", "module": "posting-dtos", "field_count": 5}, {"class_name": "Location", "kind": "jpa", "module": "posting-app", "field_count": 7}]}, {"source": "E:PaymentDetails", "target": "R:posting-backend", "weight": 1, "variants": [{"class_name": "PaymentDetailsEntity", "kind": "jpa", "module": "posting-app", "field_count": 7}]}, {"source": "E:Contact", "target": "R:posting-backend", "weight": 3, "variants": [{"class_name": "ContactDto", "kind": "dto", "module": "posting-dtos", "field_count": 18}, {"class_name": "V1ContactPubSubDto", "kind": "dto", "module": "posting-dtos", "field_count": 12}, {"class_name": "Contact", "kind": "jpa", "module": "posting-app", "field_count": 23}]}, {"source": "E:Transaction", "target": "R:posting-backend", "weight": 4, "variants": [{"class_name": "PaymentDto", "kind": "dto", "module": "posting-dtos", "field_count": 8}, {"class_name": "V1PaymentDto", "kind": "dto", "module": "posting-dtos", "field_count": 5}, {"class_name": "V1PaymentPubSubDto", "kind": "dto", "module": "posting-dtos", "field_count": 8}, {"class_name": "Payment", "kind": "jpa", "module": "posting-app", "field_count": 9}]}, {"source": "E:Trip", "target": "R:posting-backend", "weight": 5, "variants": [{"class_name": "RouteDto", "kind": "dto", "module": "posting-dtos", "field_count": 17}, {"class_name": "V1RouteDto", "kind": "dto", "module": "posting-dtos", "field_count": 7}, {"class_name": "V1RoutePubSubDto", "kind": "dto", "module": "posting-dtos", "field_count": 9}, {"class_name": "V2RouteDto", "kind": "dto", "module": "posting-dtos", "field_count": 7}, {"class_name": "Route", "kind": "jpa", "module": "posting-app", "field_count": 10}]}, {"source": "E:DateDetail", "target": "R:posting-backend", "weight": 4, "variants": [{"class_name": "DateDetailDto", "kind": "dto", "module": "posting-dtos", "field_count": 6}, {"class_name": "V1DateDetailDto", "kind": "dto", "module": "posting-dtos", "field_count": 4}, {"class_name": "V1DateDetailPubSubDto", "kind": "dto", "module": "posting-dtos", "field_count": 6}, {"class_name": "DateDetail", "kind": "jpa", "module": "posting-app", "field_count": 5}]}, {"source": "E:ShippingItem", "target": "R:posting-backend", "weight": 4, "variants": [{"class_name": "V1ShippingItemDto", "kind": "dto", "module": "posting-dtos", "field_count": 3}, {"class_name": "V1ShippingItemPubSubDto", "kind": "dto", "module": "posting-dtos", "field_count": 3}, {"class_name": "V3ShippingItemDto", "kind": "dto", "module": "posting-dtos", "field_count": 3}, {"class_name": "ShippingItem", "kind": "jpa", "module": "posting-app", "field_count": 21}]}, {"source": "E:ActivityLog", "target": "R:posting-backend", "weight": 3, "variants": [{"class_name": "ActivityLogDto", "kind": "dto", "module": "posting-dtos", "field_count": 10}, {"class_name": "V3ActivityLogDto", "kind": "dto", "module": "posting-dtos", "field_count": 8}, {"class_name": "ActivityLog", "kind": "jpa", "module": "posting-app", "field_count": 8}]}, {"source": "E:Company", "target": "R:posting-backend", "weight": 5, "variants": [{"class_name": "CarrierDto", "kind": "dto", "module": "posting-dtos", "field_count": 14}, {"class_name": "CompanyDto", "kind": "dto", "module": "posting-dtos", "field_count": 10}, {"class_name": "V1CarrierPubSubDto", "kind": "dto", "module": "posting-dtos", "field_count": 14}, {"class_name": "Carrier", "kind": "jpa", "module": "posting-app", "field_count": 3}, {"class_name": "Company", "kind": "jpa", "module": "posting-app", "field_count": 8}]}, {"source": "E:User", "target": "R:posting-backend", "weight": 5, "variants": [{"class_name": "User", "kind": "dto", "module": "posting-app", "field_count": 0}, {"class_name": "UserAccountDto", "kind": "dto", "module": "posting-dtos", "field_count": 7}, {"class_name": "UserDto", "kind": "dto", "module": "posting-dtos", "field_count": 4}, {"class_name": "V1UserAccountPubSubDto", "kind": "dto", "module": "posting-dtos", "field_count": 3}, {"class_name": "UserAccount", "kind": "jpa", "module": "posting-app", "field_count": 7}]}, {"source": "E:FileContent", "target": "R:posting-backend", "weight": 1, "variants": [{"class_name": "FileContent", "kind": "dto", "module": "posting-app", "field_count": 3}]}, {"source": "E:LineItem", "target": "R:posting-backend", "weight": 1, "variants": [{"class_name": "LineItemEmbedded", "kind": "dto", "module": "posting-app", "field_count": 0}]}, {"source": "E:DateRange", "target": "R:posting-backend", "weight": 1, "variants": [{"class_name": "DateRangeDto", "kind": "dto", "module": "posting-dtos", "field_count": 2}]}, {"source": "E:Contract", "target": "R:posting-backend", "weight": 2, "variants": [{"class_name": "ContractDto", "kind": "dto", "module": "posting-dtos", "field_count": 3}, {"class_name": "V1ContractPubSubDto", "kind": "dto", "module": "posting-dtos", "field_count": 3}]}, {"source": "E:GpsPosition", "target": "R:posting-backend", "weight": 1, "variants": [{"class_name": "CoordinatesDto", "kind": "dto", "module": "posting-dtos", "field_count": 0}]}, {"source": "E:Order", "target": "R:posting-backend", "weight": 1, "variants": [{"class_name": "OrderResponseDto", "kind": "dto", "module": "posting-dtos", "field_count": 3}]}, {"source": "E:Sort", "target": "R:posting-backend", "weight": 1, "variants": [{"class_name": "V1SortDto", "kind": "dto", "module": "posting-dtos", "field_count": 2}]}, {"source": "E:Paged", "target": "R:posting-backend", "weight": 1, "variants": [{"class_name": "V1PagedResponseDto", "kind": "dto", "module": "posting-dtos", "field_count": 5}]}, {"source": "E:Attachment", "target": "R:public-tracking-backend", "weight": 2, "variants": [{"class_name": "CtmsAttachmentPubSubDto", "kind": "dto", "module": "public-tracking-backend", "field_count": 9}, {"class_name": "PublicTrackingAttachmentDto", "kind": "dto", "module": "public-tracking-backend", "field_count": 0}]}, {"source": "E:Vehicle", "target": "R:public-tracking-backend", "weight": 3, "variants": [{"class_name": "CtmsVehicleEventDto", "kind": "dto", "module": "public-tracking-backend", "field_count": 1}, {"class_name": "CtmsVehiclePubSubDto", "kind": "dto", "module": "public-tracking-backend", "field_count": 8}, {"class_name": "PublicTrackingVehicleDto", "kind": "dto", "module": "public-tracking-backend", "field_count": 0}]}, {"source": "E:GpsPosition", "target": "R:public-tracking-backend", "weight": 1, "variants": [{"class_name": "CoordinatesDto", "kind": "dto", "module": "public-tracking-backend", "field_count": 2}]}, {"source": "E:ShippingItem", "target": "R:public-tracking-backend", "weight": 1, "variants": [{"class_name": "PublicTrackingShippingItemDto", "kind": "dto", "module": "public-tracking-backend", "field_count": 0}]}, {"source": "E:DateDetail", "target": "R:public-tracking-backend", "weight": 1, "variants": [{"class_name": "PublicTrackingDateDetailDto", "kind": "dto", "module": "public-tracking-backend", "field_count": 0}]}, {"source": "E:Load", "target": "R:public-tracking-backend", "weight": 2, "variants": [{"class_name": "LoadInfoDto", "kind": "dto", "module": "public-tracking-backend", "field_count": 0}, {"class_name": "LoadInfo", "kind": "jpa", "module": "public-tracking-backend", "field_count": 5}]}, {"source": "E:Contact", "target": "R:public-tracking-backend", "weight": 1, "variants": [{"class_name": "PublicTrackingContactDto", "kind": "dto", "module": "public-tracking-backend", "field_count": 0}]}, {"source": "E:Location", "target": "R:public-tracking-backend", "weight": 1, "variants": [{"class_name": "PublicTrackingLocationDto", "kind": "dto", "module": "public-tracking-backend", "field_count": 0}]}, {"source": "E:PubSubMessage", "target": "R:pubsub-exception-handler", "weight": 1, "variants": [{"class_name": "PubSubMessageDto", "kind": "dto", "module": "api-dtos", "field_count": 0}]}, {"source": "E:PubSubMessage", "target": "R:pusher", "weight": 1, "variants": [{"class_name": "PubSubMessageDto", "kind": "dto", "module": "api-dtos", "field_count": 39}]}, {"source": "E:User", "target": "R:pusher", "weight": 3, "variants": [{"class_name": "DbUserDto", "kind": "dto", "module": "db-syncer", "field_count": 9}, {"class_name": "User", "kind": "dto", "module": "commons", "field_count": 0}, {"class_name": "UserEntity", "kind": "jpa", "module": "db-entities", "field_count": 9}]}, {"source": "E:Company", "target": "R:pusher", "weight": 3, "variants": [{"class_name": "Company", "kind": "dto", "module": "commons", "field_count": 0}, {"class_name": "DbCompanyDto", "kind": "dto", "module": "db-syncer", "field_count": 6}, {"class_name": "CompanyEntity", "kind": "jpa", "module": "db-entities", "field_count": 3}]}, {"source": "E:ActivityLog", "target": "R:pusher", "weight": 1, "variants": [{"class_name": "ActivityLogDto", "kind": "dto", "module": "event-listener", "field_count": 18}]}, {"source": "E:Attachment", "target": "R:pusher", "weight": 1, "variants": [{"class_name": "AttachmentDto", "kind": "dto", "module": "event-listener", "field_count": 5}]}, {"source": "E:Vehicle", "target": "R:pusher", "weight": 1, "variants": [{"class_name": "VehicleDto", "kind": "dto", "module": "event-listener", "field_count": 2}]}, {"source": "E:Location", "target": "R:pusher", "weight": 1, "variants": [{"class_name": "LocationRequestDto", "kind": "dto", "module": "event-listener", "field_count": 0}]}, {"source": "E:Load", "target": "R:pusher", "weight": 1, "variants": [{"class_name": "LoadDto", "kind": "dto", "module": "event-listener", "field_count": 16}]}, {"source": "E:CompanyVo", "target": "R:pusher", "weight": 1, "variants": [{"class_name": "CompanyVo", "kind": "dto", "module": "domain", "field_count": 2}]}, {"source": "E:State", "target": "R:quarkus-imperative-boilerplate", "weight": 2, "variants": [{"class_name": "StateDto", "kind": "dto", "module": "api-dtos", "field_count": 0}, {"class_name": "StateEntity", "kind": "jpa", "module": "db-entities", "field_count": 2}]}, {"source": "E:City", "target": "R:quarkus-imperative-boilerplate", "weight": 2, "variants": [{"class_name": "CityDto", "kind": "dto", "module": "api-dtos", "field_count": 0}, {"class_name": "CityEntity", "kind": "jpa", "module": "db-entities", "field_count": 1}]}, {"source": "E:State", "target": "R:quarkus-k8s-boilerplate", "weight": 2, "variants": [{"class_name": "StateDto", "kind": "dto", "module": "quarkus-k8s-boilerplate", "field_count": 0}, {"class_name": "StateEntity", "kind": "jpa", "module": "quarkus-k8s-boilerplate", "field_count": 2}]}, {"source": "E:City", "target": "R:quarkus-k8s-boilerplate", "weight": 2, "variants": [{"class_name": "CityDto", "kind": "dto", "module": "quarkus-k8s-boilerplate", "field_count": 0}, {"class_name": "CityEntity", "kind": "jpa", "module": "quarkus-k8s-boilerplate", "field_count": 1}]}, {"source": "E:User", "target": "R:quarkus-user-syncer", "weight": 1, "variants": [{"class_name": "UserAccountEventDto", "kind": "dto", "module": "runtime", "field_count": 0}]}, {"source": "E:Company", "target": "R:quarkus-user-syncer", "weight": 1, "variants": [{"class_name": "CompanyEventDto", "kind": "dto", "module": "runtime", "field_count": 0}]}, {"source": "E:Location", "target": "R:quote-manager-backend", "weight": 1, "variants": [{"class_name": "LocationDto", "kind": "dto", "module": "quote-manager-backend", "field_count": 2}]}, {"source": "E:Company", "target": "R:quote-manager-backend", "weight": 1, "variants": [{"class_name": "CompanyDto", "kind": "dto", "module": "quote-manager-backend", "field_count": 6}]}, {"source": "E:Notification", "target": "R:quote-manager-backend", "weight": 1, "variants": [{"class_name": "NotificationEventDto", "kind": "dto", "module": "quote-manager-backend", "field_count": 4}]}, {"source": "E:Quote", "target": "R:quote-manager-backend", "weight": 10, "variants": [{"class_name": "QuoteDto", "kind": "dto", "module": "quote-manager-backend", "field_count": 6}, {"class_name": "QuoteDto", "kind": "dto", "module": "quote-manager-backend", "field_count": 6}, {"class_name": "QuotePubSubDto", "kind": "dto", "module": "quote-manager-backend", "field_count": 5}, {"class_name": "QuotePubSubDto", "kind": "dto", "module": "quote-manager-backend", "field_count": 6}, {"class_name": "QuoteRequestDto", "kind": "dto", "module": "quote-manager-backend", "field_count": 1}, {"class_name": "QuoteRequestPubSubDto", "kind": "dto", "module": "quote-manager-backend", "field_count": 1}, {"class_name": "QuoteRequestPubSubDto", "kind": "dto", "module": "quote-manager-backend", "field_count": 15}, {"class_name": "QuoteResponse", "kind": "dto", "module": "quote-manager-backend", "field_count": 6}, {"class_name": "QuoteResponseDto", "kind": "dto", "module": "quote-manager-backend", "field_count": 8}, {"class_name": "Quote", "kind": "jpa", "module": "quote-manager-backend", "field_count": 10}]}, {"source": "E:Contact", "target": "R:quote-manager-backend", "weight": 1, "variants": [{"class_name": "ContactDto", "kind": "dto", "module": "quote-manager-backend", "field_count": 17}]}, {"source": "E:ManagedServiceProvider", "target": "R:quote-manager-backend", "weight": 4, "variants": [{"class_name": "ManagedServiceProviderDto", "kind": "dto", "module": "quote-manager-backend", "field_count": 8}, {"class_name": "ManagedServiceProviderPubSubDto", "kind": "dto", "module": "quote-manager-backend", "field_count": 11}, {"class_name": "ManagedServiceProviderPubSubDto", "kind": "dto", "module": "quote-manager-backend", "field_count": 12}, {"class_name": "ManagedServiceProvider", "kind": "jpa", "module": "quote-manager-backend", "field_count": 4}]}, {"source": "E:Order", "target": "R:quote-manager-backend", "weight": 2, "variants": [{"class_name": "OrderDto", "kind": "dto", "module": "quote-manager-backend", "field_count": 10}, {"class_name": "OrderResponse", "kind": "dto", "module": "quote-manager-backend", "field_count": 5}]}, {"source": "E:Sort", "target": "R:quote-manager-backend", "weight": 1, "variants": [{"class_name": "SortDto", "kind": "dto", "module": "quote-manager-backend", "field_count": 2}]}, {"source": "E:Paged", "target": "R:quote-manager-backend", "weight": 1, "variants": [{"class_name": "PagedResponseDto", "kind": "dto", "module": "quote-manager-backend", "field_count": 5}]}, {"source": "E:Vehicle", "target": "R:quote-manager-backend", "weight": 3, "variants": [{"class_name": "VehicleRequestPubSubDto", "kind": "dto", "module": "quote-manager-backend", "field_count": 8}, {"class_name": "VehicleRequestPubSubDto", "kind": "dto", "module": "quote-manager-backend", "field_count": 8}, {"class_name": "Vehicle", "kind": "jpa", "module": "quote-manager-backend", "field_count": 7}]}, {"source": "E:CompanyVo", "target": "R:quote-manager-backend", "weight": 1, "variants": [{"class_name": "CompanyVo", "kind": "dto", "module": "quote-manager-backend", "field_count": 4}]}, {"source": "E:Filter", "target": "R:quote-manager-backend", "weight": 1, "variants": [{"class_name": "Filter", "kind": "dto", "module": "quote-manager-backend", "field_count": 3}]}, {"source": "E:SavedSearch", "target": "R:saved-search-handler", "weight": 3, "variants": [{"class_name": "SavedSearch", "kind": "dto", "module": "commons", "field_count": 9}, {"class_name": "SavedSearchDto", "kind": "dto", "module": "api-dtos", "field_count": 6}, {"class_name": "SavedSearchEntity", "kind": "jpa", "module": "db-entities", "field_count": 9}]}, {"source": "E:Filter", "target": "R:saved-search-handler", "weight": 1, "variants": [{"class_name": "Filter", "kind": "dto", "module": "api-dtos", "field_count": 1}]}, {"source": "E:User", "target": "R:saved-search-handler", "weight": 2, "variants": [{"class_name": "User", "kind": "dto", "module": "commons", "field_count": 5}, {"class_name": "UserEntity", "kind": "jpa", "module": "db-entities", "field_count": 4}]}, {"source": "E:Company", "target": "R:saved-search-handler", "weight": 1, "variants": [{"class_name": "CompanyEntity", "kind": "jpa", "module": "db-entities", "field_count": 1}]}, {"source": "E:FileContent", "target": "R:spring-commons", "weight": 1, "variants": [{"class_name": "FileContentDto", "kind": "dto", "module": "spring-gcp-storage-client-impl", "field_count": 3}]}, {"source": "E:SavedSearch", "target": "R:syncer", "weight": 2, "variants": [{"class_name": "SavedSearchDto", "kind": "dto", "module": "api-dtos", "field_count": 0}, {"class_name": "SavedSearchReadDto", "kind": "dto", "module": "api-dtos", "field_count": 2}]}, {"source": "E:Trip", "target": "R:syncer", "weight": 1, "variants": [{"class_name": "TripEntityReadDto", "kind": "dto", "module": "services", "field_count": 3}]}, {"source": "E:Attachment", "target": "R:syncer", "weight": 1, "variants": [{"class_name": "CtmsAttachmentEntityReadDto", "kind": "dto", "module": "services", "field_count": 28}]}, {"source": "E:Vehicle", "target": "R:syncer", "weight": 1, "variants": [{"class_name": "CtmsVehicleEntityReadDto", "kind": "dto", "module": "services", "field_count": 59}]}, {"source": "E:CtmsOfferActivityLog", "target": "R:syncer", "weight": 1, "variants": [{"class_name": "CtmsOfferActivityLogEntityReadDto", "kind": "dto", "module": "services", "field_count": 4}]}, {"source": "E:Metadata", "target": "R:syncer", "weight": 1, "variants": [{"class_name": "MetadataEntityReadDto", "kind": "dto", "module": "services", "field_count": 7}]}, {"source": "E:Negotiation", "target": "R:syncer", "weight": 1, "variants": [{"class_name": "CtmsNegotiationEntityReadDto", "kind": "dto", "module": "services", "field_count": 18}]}, {"source": "E:CtmsGeoPoint", "target": "R:syncer", "weight": 1, "variants": [{"class_name": "CtmsGeoPointEntityReadDto", "kind": "dto", "module": "services", "field_count": 2}]}, {"source": "E:Posting", "target": "R:syncer", "weight": 1, "variants": [{"class_name": "CtmsPostingEntityReadDto", "kind": "dto", "module": "services", "field_count": 85}]}, {"source": "E:Location", "target": "R:trip-planner", "weight": 1, "variants": [{"class_name": "LocationDto", "kind": "dto", "module": "api-dtos", "field_count": 4}]}, {"source": "E:Trip", "target": "R:trip-planner", "weight": 6, "variants": [{"class_name": "RouteDto", "kind": "dto", "module": "api-dtos", "field_count": 3}, {"class_name": "Trip", "kind": "dto", "module": "domain", "field_count": 79}, {"class_name": "TripDto", "kind": "dto", "module": "api-dtos", "field_count": 17}, {"class_name": "TripPubSubDto", "kind": "dto", "module": "api-dtos", "field_count": 6}, {"class_name": "TripEntity", "kind": "jpa", "module": "db-entities", "field_count": 19}, {"class_name": "RouteEntity", "kind": "other", "module": "db-entities", "field_count": 3}]}, {"source": "E:DateRange", "target": "R:trip-planner", "weight": 1, "variants": [{"class_name": "DateRangeDto", "kind": "dto", "module": "api-dtos", "field_count": 2}]}, {"source": "E:Load", "target": "R:trip-planner", "weight": 3, "variants": [{"class_name": "TripLoadDto", "kind": "dto", "module": "api-dtos", "field_count": 11}, {"class_name": "TripLoadOrder", "kind": "dto", "module": "domain", "field_count": 1}, {"class_name": "TripLoadEntity", "kind": "jpa", "module": "db-entities", "field_count": 22}]}, {"source": "E:GpsPosition", "target": "R:trip-planner", "weight": 2, "variants": [{"class_name": "GeoPointDto", "kind": "dto", "module": "api-dtos", "field_count": 2}, {"class_name": "GeoPointEntity", "kind": "embedded", "module": "db-entities", "field_count": 2}]}, {"source": "E:User", "target": "R:trip-planner", "weight": 3, "variants": [{"class_name": "DbUserDto", "kind": "dto", "module": "db-syncer", "field_count": 5}, {"class_name": "UserDto", "kind": "dto", "module": "api-dtos", "field_count": 3}, {"class_name": "UserEntity", "kind": "jpa", "module": "db-entities", "field_count": 5}]}, {"source": "E:Company", "target": "R:trip-planner", "weight": 2, "variants": [{"class_name": "DbCompanyDto", "kind": "dto", "module": "db-syncer", "field_count": 2}, {"class_name": "CompanyEntity", "kind": "jpa", "module": "db-entities", "field_count": 2}]}, {"source": "E:SavedSearch", "target": "R:trip-planner", "weight": 1, "variants": [{"class_name": "SavedSearchDto", "kind": "dto", "module": "infra-interfaces", "field_count": 6}]}, {"source": "E:Vehicle", "target": "R:trip-planner", "weight": 1, "variants": [{"class_name": "CtmsVehicleDto", "kind": "dto", "module": "infra-interfaces", "field_count": 0}]}, {"source": "E:CtmsGeoPoint", "target": "R:trip-planner", "weight": 1, "variants": [{"class_name": "CtmsGeoPointDto", "kind": "dto", "module": "infra-interfaces", "field_count": 1}]}, {"source": "E:Negotiation", "target": "R:trip-planner", "weight": 1, "variants": [{"class_name": "CtmsNegotiationDto", "kind": "dto", "module": "infra-interfaces", "field_count": 5}]}, {"source": "E:Posting", "target": "R:trip-planner", "weight": 1, "variants": [{"class_name": "CtmsPostingDto", "kind": "dto", "module": "infra-interfaces", "field_count": 4}]}, {"source": "E:Offer", "target": "R:trip-planner", "weight": 1, "variants": [{"class_name": "OfferDto", "kind": "dto", "module": "infra-interfaces", "field_count": 1}]}, {"source": "E:CompanyVo", "target": "R:trip-planner", "weight": 1, "variants": [{"class_name": "CompanyVo", "kind": "dto", "module": "domain", "field_count": 1}]}, {"source": "E:User", "target": "R:user-backend", "weight": 5, "variants": [{"class_name": "User", "kind": "dto", "module": "usermanagement-app", "field_count": 2}, {"class_name": "V1UserAccountDto", "kind": "dto", "module": "usermanagement-dtos", "field_count": 19}, {"class_name": "V2UserAccountDto", "kind": "dto", "module": "usermanagement-dtos", "field_count": 26}, {"class_name": "V2UserAccountPubSubDto", "kind": "dto", "module": "usermanagement-dtos", "field_count": 22}, {"class_name": "UserAccount", "kind": "jpa", "module": "usermanagement-app", "field_count": 22}]}, {"source": "E:Company", "target": "R:user-backend", "weight": 4, "variants": [{"class_name": "V1CompanyDto", "kind": "dto", "module": "usermanagement-dtos", "field_count": 23}, {"class_name": "V2CompanyDto", "kind": "dto", "module": "usermanagement-dtos", "field_count": 27}, {"class_name": "V2CompanyPubSubDto", "kind": "dto", "module": "usermanagement-dtos", "field_count": 30}, {"class_name": "Company", "kind": "jpa", "module": "usermanagement-app", "field_count": 29}]}, {"source": "E:Sort", "target": "R:user-backend", "weight": 1, "variants": [{"class_name": "V1SortDto", "kind": "dto", "module": "usermanagement-dtos", "field_count": 2}]}, {"source": "E:Paged", "target": "R:user-backend", "weight": 1, "variants": [{"class_name": "V1PagedResponseDto", "kind": "dto", "module": "usermanagement-dtos", "field_count": 5}]}, {"source": "E:Attachment", "target": "R:user-backend", "weight": 1, "variants": [{"class_name": "Attachment", "kind": "jpa", "module": "usermanagement-app", "field_count": 4}]}, {"source": "E:FileContent", "target": "R:user-backend", "weight": 1, "variants": [{"class_name": "FileContent", "kind": "dto", "module": "usermanagement-app", "field_count": 3}]}, {"source": "E:Quote", "target": "R:uship-quotes", "weight": 1, "variants": [{"class_name": "QuoteDto", "kind": "dto", "module": "api-dtos", "field_count": 0}]}, {"source": "E:CompanyConfig", "target": "R:uship-quotes", "weight": 2, "variants": [{"class_name": "CompanyConfigDto", "kind": "dto", "module": "api-dtos", "field_count": 0}, {"class_name": "CompanyConfigEntity", "kind": "jpa", "module": "db-entities", "field_count": 7}]}, {"source": "E:Trip", "target": "R:uship-quotes", "weight": 1, "variants": [{"class_name": "RouteDto", "kind": "dto", "module": "api-dtos", "field_count": 0}]}, {"source": "E:Location", "target": "R:uship-quotes", "weight": 2, "variants": [{"class_name": "AddressDto", "kind": "dto", "module": "api-dtos", "field_count": 0}, {"class_name": "LocationDto", "kind": "dto", "module": "api-dtos", "field_count": 0}]}, {"source": "E:UserContext", "target": "R:uship-quotes", "weight": 1, "variants": [{"class_name": "UserContext", "kind": "dto", "module": "commons", "field_count": 0}]}];
+const DOMAIN_COLORS = {
+  "listings-trade":  getComputedStyle(document.documentElement).getPropertyValue('--d-listings-trade').trim(),
+  "operations":       getComputedStyle(document.documentElement).getPropertyValue('--d-operations').trim(),
+  "pricing-billing":  getComputedStyle(document.documentElement).getPropertyValue('--d-pricing-billing').trim(),
+  "integrations":     getComputedStyle(document.documentElement).getPropertyValue('--d-integrations').trim(),
+  "identity":         getComputedStyle(document.documentElement).getPropertyValue('--d-identity').trim(),
+  "communication":    getComputedStyle(document.documentElement).getPropertyValue('--d-communication').trim(),
+  "platform":         getComputedStyle(document.documentElement).getPropertyValue('--d-platform').trim(),
+  "analytics":        getComputedStyle(document.documentElement).getPropertyValue('--d-analytics').trim(),
+  "infrastructure":   getComputedStyle(document.documentElement).getPropertyValue('--d-infrastructure').trim(),
+  "unassigned":       getComputedStyle(document.documentElement).getPropertyValue('--d-unassigned').trim(),
+};
+let topN = 15;
+let minEdgeWeight = 1;
+let selected = null;
+const $ = id => document.getElementById(id);
+
+function escapeHtml(s) {
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+                  .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+function entityRadius(n) {
+  return Math.max(7, Math.min(28, 4 + Math.sqrt(n.variants) * 2.2));
+}
+
+function repoSize(n) {
+  // width x height
+  const cnt = n.canonical_count || 1;
+  const w = Math.max(40, Math.min(140, 40 + cnt * 6));
+  return { w, h: 18 };
+}
+
+const svg = d3.select("#graph");
+const width  = $('graph-host').clientWidth;
+const height = $('graph-host').clientHeight;
+svg.attr("viewBox", `0 0 ${width} ${height}`);
+
+const root = svg.append("g").attr("class", "root");
+const edgeLayer = root.append("g").attr("class", "edges");
+const nodeLayer = root.append("g").attr("class", "nodes");
+
+const zoom = d3.zoom()
+  .scaleExtent([0.2, 4])
+  .on("zoom", (e) => root.attr("transform", e.transform));
+svg.call(zoom);
+
+let sim = null;
+let visibleEntities = [];
+let visibleRepos = [];
+let visibleEdges = [];
+
+function applyFilter() {
+  // 1. Keep top-N entities by rank.
+  const sorted = ENTITY_NODES.slice().sort((a, b) => a.rank - b.rank);
+  const keptE = new Set(sorted.slice(0, topN).map(n => n.id));
+  // 2. Keep edges meeting min weight and whose entity is kept.
+  visibleEdges = EDGES.filter(e =>
+    e.weight >= minEdgeWeight && keptE.has(e.source)
+  ).map(e => ({...e}));
+  // 3. Keep entity nodes that survive AND have at least one kept edge.
+  const liveEntities = new Set(visibleEdges.map(e => e.source));
+  visibleEntities = ENTITY_NODES.filter(n => keptE.has(n.id) && liveEntities.has(n.id))
+                                 .map(n => ({...n}));
+  // 4. Keep repos that are endpoints of any kept edge.
+  const liveRepos = new Set(visibleEdges.map(e => e.target));
+  visibleRepos = REPO_NODES.filter(n => liveRepos.has(n.id)).map(n => ({...n}));
+
+  $('entity-count').textContent = visibleEntities.length;
+  $('repo-count').textContent = visibleRepos.length;
+  $('edge-count').textContent = visibleEdges.length;
+  renderSummary();
+  rebuild();
+}
+
+function renderSummary() {
+  if (visibleEdges.length === 0) {
+    $('summary-bar').innerHTML = '';
+    return;
+  }
+  // Total variant count = sum of edge weights
+  const totalVariants = visibleEdges.reduce((acc, e) => acc + e.weight, 0);
+  // Heaviest edge
+  const heaviest = visibleEdges.slice().sort((a, b) => b.weight - a.weight)[0];
+  const ePart = heaviest ? `${heaviest.source.replace('E:', '')} × ${heaviest.target.replace('R:', '')}` : '—';
+  // Most-connected entity (most repos)
+  const entityRepoCount = new Map();
+  for (const e of visibleEdges) {
+    entityRepoCount.set(e.source, (entityRepoCount.get(e.source) || 0) + 1);
+  }
+  let topEntity = null, topCount = 0;
+  for (const [eid, c] of entityRepoCount) {
+    if (c > topCount) { topCount = c; topEntity = eid; }
+  }
+  $('summary-bar').innerHTML = `
+    <span><strong>${totalVariants}</strong> total variant classes</span>
+    <span>most-spread entity: <strong>${escapeHtml((topEntity || '—').replace('E:', ''))}</strong> (${topCount} repos)</span>
+    <span>heaviest connection: <strong>${escapeHtml(ePart)}</strong> (${heaviest ? heaviest.weight : 0} variants)</span>
+  `;
+}
+
+function rebuild() {
+  edgeLayer.selectAll("*").remove();
+  nodeLayer.selectAll("*").remove();
+
+  const link = edgeLayer.selectAll("line")
+    .data(visibleEdges, d => `${d.source}|${d.target}`)
+    .join("line")
+    .attr("class", "edge")
+    .attr("stroke-width", d => Math.min(6, 0.8 + Math.log2(d.weight + 1) * 1.4))
+    .on("mouseover", function(event, d) {
+      d3.select(this).classed("hi", true);
+    })
+    .on("mouseout", function(event, d) {
+      if (!selected) d3.select(this).classed("hi", false);
+    })
+    .on("click", (event, d) => {
+      event.stopPropagation();
+      selectEdge(d);
+    });
+
+  link.append("title").text(d =>
+    `${d.source.replace('E:','')}  ×  ${d.target.replace('R:','')}\n${d.weight} variant class(es)`
+  );
+
+  const allNodes = visibleEntities.concat(visibleRepos);
+  const node = nodeLayer.selectAll("g")
+    .data(allNodes, d => d.id)
+    .join("g")
+    .attr("class", d => "node " + d.type)
+    .call(d3.drag()
+      .on("start", dragStart)
+      .on("drag", dragging)
+      .on("end", dragEnd))
+    .on("click", (event, d) => { event.stopPropagation(); selectNode(d.id); });
+
+  // Entity nodes: circles
+  node.filter(d => d.type === "entity")
+    .append("circle")
+    .attr("r", entityRadius)
+    .attr("fill", d => DOMAIN_COLORS[d.primary_domain] || DOMAIN_COLORS.unassigned);
+
+  // Repo nodes: rounded rectangles
+  node.filter(d => d.type === "repo")
+    .append("rect")
+    .attr("x", d => -repoSize(d).w / 2)
+    .attr("y", d => -repoSize(d).h / 2)
+    .attr("width",  d => repoSize(d).w)
+    .attr("height", d => repoSize(d).h)
+    .attr("rx", 4)
+    .attr("ry", 4)
+    .attr("fill", d => DOMAIN_COLORS[d.primary_domain] || DOMAIN_COLORS.unassigned);
+
+  // Labels
+  node.filter(d => d.type === "entity")
+    .append("text")
+    .attr("dy", d => entityRadius(d) + 11)
+    .text(d => d.name);
+  node.filter(d => d.type === "repo")
+    .append("text")
+    .attr("dy", 3)
+    .style("stroke-width", 0)
+    .style("fill", "#0f1115")
+    .text(d => d.name);
+
+  // Tooltip
+  node.append("title").text(d => {
+    if (d.type === "entity") {
+      const kbd = Object.entries(d.kind_breakdown || {})
+        .map(([k, v]) => `${k}=${v}`).join(', ');
+      return `${d.name}\n#${d.rank} · ${d.variants} variants · ${d.repos} repos\nkinds: ${kbd}`;
+    } else {
+      return `${d.name}\ndomain: ${d.primary_domain}\nhosts ${d.canonical_count} catalog entities (${d.variant_count} variants)`;
+    }
+  });
+
+  if (sim) sim.stop();
+  sim = d3.forceSimulation(allNodes)
+    .force("link", d3.forceLink(visibleEdges)
+      .id(d => d.id)
+      .distance(d => 80 + 6 / Math.sqrt(d.weight))
+      .strength(d => Math.min(0.7, 0.15 * Math.log2(d.weight + 1) + 0.15)))
+    .force("charge", d3.forceManyBody().strength(d => d.type === "entity" ? -400 : -160))
+    .force("center", d3.forceCenter(width / 2, height / 2))
+    .force("collide", d3.forceCollide().radius(d => d.type === "entity" ? entityRadius(d) + 18 : repoSize(d).w / 2 + 6))
+    .force("x", d3.forceX(d => d.type === "entity" ? width * 0.35 : width * 0.7).strength(0.08))
+    .alpha(1).alphaDecay(0.025)
+    .on("tick", () => {
+      link
+        .attr("x1", d => d.source.x).attr("y1", d => d.source.y)
+        .attr("x2", d => d.target.x).attr("y2", d => d.target.y);
+      node.attr("transform", d => `translate(${d.x}, ${d.y})`);
+    });
+
+  if (selected) applySelection(selected);
+}
+
+function dragStart(event, d) {
+  if (!event.active) sim.alphaTarget(0.3).restart();
+  d.fx = d.x; d.fy = d.y;
+  svg.classed("dragging", true);
+}
+function dragging(event, d) { d.fx = event.x; d.fy = event.y; }
+function dragEnd(event, d) {
+  if (!event.active) sim.alphaTarget(0);
+  svg.classed("dragging", false);
+}
+
+function endpointId(e, side) {
+  const v = side === 'src' ? e.source : e.target;
+  return typeof v === 'object' ? v.id : v;
+}
+
+function applySelection(id) {
+  const neighborIds = new Set([id]);
+  for (const e of visibleEdges) {
+    const s = endpointId(e, 'src');
+    const t = endpointId(e, 'tgt');
+    if (s === id) neighborIds.add(t);
+    if (t === id) neighborIds.add(s);
+  }
+  nodeLayer.selectAll("g.node")
+    .classed("hi", d => d.id === id)
+    .classed("dim", d => !neighborIds.has(d.id));
+  edgeLayer.selectAll("line")
+    .classed("hi", e => {
+      const s = endpointId(e, 'src');
+      const t = endpointId(e, 'tgt');
+      return s === id || t === id;
+    })
+    .classed("dim", e => {
+      const s = endpointId(e, 'src');
+      const t = endpointId(e, 'tgt');
+      return s !== id && t !== id;
+    });
+}
+
+function clearSelection() {
+  selected = null;
+  nodeLayer.selectAll("g.node").classed("hi", false).classed("dim", false);
+  edgeLayer.selectAll("line").classed("hi", false).classed("dim", false);
+  renderDetailEmpty();
+}
+
+function selectNode(id) {
+  selected = id;
+  applySelection(id);
+  if (id.startsWith("E:")) renderEntityDetail(id);
+  else renderRepoDetail(id);
+  nodeLayer.selectAll("g.node circle, g.node rect").classed("pulse", d => d.id === id);
+  setTimeout(() => nodeLayer.selectAll("circle, rect").classed("pulse", false), 1600);
+}
+
+function selectEdge(d) {
+  // Highlight edge + its two endpoints. Detail panel shows just this edge's variants.
+  selected = null;
+  nodeLayer.selectAll("g.node")
+    .classed("hi", n => n.id === d.source || n.id === d.target)
+    .classed("dim", n => n.id !== d.source && n.id !== d.target);
+  edgeLayer.selectAll("line")
+    .classed("hi", e => e === d)
+    .classed("dim", e => e !== d);
+  renderEdgeDetail(d);
+}
+
+function renderDetailEmpty() {
+  $('detail').innerHTML = `
+    <div class="empty">
+      <div style="font-size: 36px; margin-bottom: 8px;">⊙ ⬚</div>
+      <p><strong>Click a node</strong> to see how an entity is represented across repos — or which entities a repo hosts.</p>
+      <div class="legend-block">
+        <div style="color:var(--muted); text-transform:uppercase; letter-spacing:0.5px; font-size:9px; margin-bottom:6px;">Legend</div>
+        <div class="legend-row"><span class="shape-dot" style="background:var(--d-listings-trade)"></span> circle = canonical entity (color = primary domain)</div>
+        <div class="legend-row"><span class="shape-sq" style="background:var(--d-operations)"></span> rounded rect = repo (color = repo domain)</div>
+        <div class="legend-row"><span class="kind-badge kind-jpa">jpa</span> &nbsp;<span class="kind-badge kind-dto">dto</span> &nbsp;<span class="kind-badge kind-embedded">embedded</span> &nbsp;<span class="kind-badge kind-other">other</span></div>
+      </div>
+      <p style="font-size: 11px;">Edge thickness = number of variant classes that repo declares for that entity.</p>
+    </div>
+  `;
+}
+
+function variantBadge(v) {
+  return `<span class="kind-badge kind-${escapeHtml(v.kind)}">${escapeHtml(v.kind)}</span>`;
+}
+
+function renderEntityDetail(id) {
+  const entity = ENTITY_NODES.find(n => n.id === id);
+  if (!entity) return;
+  const edgesForEntity = EDGES.filter(e => e.source === id)
+                              .sort((a, b) => b.weight - a.weight);
+  const domBadges = (entity.domains || []).map(d =>
+    `<span class="dom-badge" data-d="${escapeHtml(d)}">${escapeHtml(d)}</span>`).join('');
+  const kbd = entity.kind_breakdown || {};
+  const kindLine = Object.entries(kbd).map(([k, v]) =>
+    `<span class="kind-badge kind-${escapeHtml(k)}">${escapeHtml(k)} ×${v}</span>`
+  ).join(' ');
+
+  let html = `
+    <h2>⊙ ${escapeHtml(entity.name)}</h2>
+    <div class="sub">rank #${entity.rank}${entity.rank <= 25 ? ' · top-25' : ''}</div>
+    <div class="stats">
+      <div class="k">Variants</div><div class="v">${entity.variants}</div>
+      <div class="k">Repos</div><div class="v">${entity.repos}</div>
+      <div class="k">Owning</div><div class="v">${escapeHtml(entity.owning)}</div>
+      <div class="k">Domains</div><div class="v">${domBadges || '—'}</div>
+      <div class="k">Kinds</div><div class="v">${kindLine || '—'}</div>
+    </div>
+    <h3>Representations by repo (${edgesForEntity.length})</h3>
+  `;
+  for (const e of edgesForEntity) {
+    const repo = e.target.replace('R:', '');
+    const vlist = (e.variants || []).map(v => `
+      <div class="variant">
+        ${variantBadge(v)}
+        <span class="class">${escapeHtml(v.class_name)}</span>
+        <span class="field-count">· ${v.field_count} fields</span>
+      </div>
+      <div class="variant"><span class="module">module: ${escapeHtml(v.module)}</span></div>
+    `).join('');
+    html += `
+      <div class="repo-group">
+        <div class="repo-name" data-jump="R:${escapeHtml(repo)}">⬚ ${escapeHtml(repo)} <span style="color:var(--muted); font-weight:400; font-size:10px;">· ${e.weight} variant${e.weight === 1 ? '' : 's'}</span></div>
+        ${vlist}
+      </div>
+    `;
+  }
+  if (entity.has_page) {
+    html += `<div style="margin-top: 14px; font-size: 11px;"><a href="./${encodeURIComponent(entity.name)}.md" style="color: var(--link);">→ open ${escapeHtml(entity.name)}.md</a></div>`;
+  }
+  $('detail').innerHTML = html;
+  wireJumps();
+}
+
+function renderRepoDetail(id) {
+  const repo = REPO_NODES.find(n => n.id === id);
+  if (!repo) return;
+  const edgesForRepo = EDGES.filter(e => e.target === id)
+                            .sort((a, b) => b.weight - a.weight);
+
+  let html = `
+    <h2>⬚ ${escapeHtml(repo.name)}</h2>
+    <div class="sub">repo</div>
+    <div class="stats">
+      <div class="k">Domain</div><div class="v"><span class="dom-badge" data-d="${escapeHtml(repo.primary_domain)}">${escapeHtml(repo.primary_domain)}</span></div>
+      <div class="k">Catalog entities hosted</div><div class="v">${repo.canonical_count}</div>
+      <div class="k">Variant classes</div><div class="v">${repo.variant_count}</div>
+    </div>
+    <div style="margin-top: 8px; font-size: 11px;"><a href="../../repos/${encodeURIComponent(repo.name)}.md" style="color: var(--link);">→ open shadow doc</a></div>
+    <h3>Entities declared here (${edgesForRepo.length})</h3>
+  `;
+  for (const e of edgesForRepo) {
+    const ent = e.source.replace('E:', '');
+    const vlist = (e.variants || []).map(v => `
+      <div class="variant">
+        ${variantBadge(v)}
+        <span class="class">${escapeHtml(v.class_name)}</span>
+        <span class="field-count">· ${v.field_count} fields</span>
+        <span class="module">· ${escapeHtml(v.module)}</span>
+      </div>
+    `).join('');
+    html += `
+      <div class="repo-group">
+        <div class="repo-name" data-jump="E:${escapeHtml(ent)}">⊙ ${escapeHtml(ent)} <span style="color:var(--muted); font-weight:400; font-size:10px;">· ${e.weight} variant${e.weight === 1 ? '' : 's'}</span></div>
+        ${vlist}
+      </div>
+    `;
+  }
+  $('detail').innerHTML = html;
+  wireJumps();
+}
+
+function renderEdgeDetail(edge) {
+  const entId = endpointId(edge, 'src').replace('E:', '');
+  const repoId = endpointId(edge, 'tgt').replace('R:', '');
+  let html = `
+    <h2><span style="color:var(--muted)">⊙</span> ${escapeHtml(entId)}
+        <span style="color:var(--muted); font-weight:400;">→</span>
+        <span style="color:var(--muted)">⬚</span> ${escapeHtml(repoId)}</h2>
+    <div class="sub">${edge.weight} variant${edge.weight === 1 ? '' : 's'}</div>
+  `;
+  for (const v of (edge.variants || [])) {
+    html += `
+      <div class="repo-group">
+        <div class="variant">
+          ${variantBadge(v)}
+          <span class="class">${escapeHtml(v.class_name)}</span>
+          <span class="field-count">· ${v.field_count} fields</span>
+        </div>
+        <div class="variant"><span class="module">module: ${escapeHtml(v.module)}</span></div>
+      </div>
+    `;
+  }
+  html += `
+    <div style="margin-top: 12px; font-size: 11px; display: flex; gap: 10px;">
+      <span class="repo-name" data-jump="E:${escapeHtml(entId)}" style="cursor:pointer;">⊙ open entity</span>
+      <span class="repo-name" data-jump="R:${escapeHtml(repoId)}" style="cursor:pointer;">⬚ open repo</span>
+    </div>
+  `;
+  $('detail').innerHTML = html;
+  wireJumps();
+}
+
+function wireJumps() {
+  for (const el of document.querySelectorAll('.repo-name[data-jump]')) {
+    el.addEventListener('click', () => {
+      const target = el.getAttribute('data-jump');
+      const exists = ENTITY_NODES.find(n => n.id === target)
+                  || REPO_NODES.find(n => n.id === target);
+      if (exists) selectNode(target);
+    });
+  }
+}
+
+svg.on("click", clearSelection);
+
+$('q').addEventListener('input', e => {
+  const q = e.target.value.trim().toLowerCase();
+  if (!q) { clearSelection(); return; }
+  const pool = visibleEntities.concat(visibleRepos);
+  const hit = pool.find(n => n.name.toLowerCase() === q)
+           || pool.find(n => n.name.toLowerCase().startsWith(q))
+           || pool.find(n => n.name.toLowerCase().includes(q));
+  if (hit) selectNode(hit.id);
+});
+
+$('top-slider').addEventListener('input', e => {
+  topN = parseInt(e.target.value, 10);
+  $('top-val').textContent = topN;
+  applyFilter();
+});
+$('edge-slider').addEventListener('input', e => {
+  minEdgeWeight = parseInt(e.target.value, 10);
+  $('edge-val').textContent = minEdgeWeight;
+  applyFilter();
+});
+
+applyFilter();
+renderDetailEmpty();
+
+// Restore from URL hash: E:Vehicle or R:loadboard-backend
+const hash = decodeURIComponent(location.hash.slice(1));
+if (hash) setTimeout(() => selectNode(hash), 500);
+</script>
+</body>
+</html>

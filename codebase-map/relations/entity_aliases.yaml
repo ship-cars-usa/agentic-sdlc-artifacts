@@ -1,0 +1,86 @@
+# Cross-repo business-entity alias table.
+#
+# Maintained alongside `entity-catalog.md`. Edited by hand; consumed by
+# ~/projects/codebase-map/scripts/cluster_entities.py.
+#
+# Two sections:
+#   canonical:  <Canonical>: [observed names that should fold into this canonical]
+#   splits:     overrides applied BEFORE alias merge — force (repo, name) tuples
+#               into a distinct canonical when the same name means different
+#               things in different repos.
+#
+# After every clusterer run, review `relations/entity-catalog.unaliased.tsv`.
+# Any observed name with occurrence >= 3 that doesn't appear here is either
+# (a) genuinely its own canonical (leave it), or (b) a missed alias (add it).
+
+canonical:
+  # Core marketplace nouns
+  User:                [User, UserAccount, UserInfo, UserProfile, Person, Account, DbUser]
+  Company:             [Company, CarrierCompany, ShipperCompany, Customer, Organization, Carrier, DbCompany]
+  Vehicle:             [Vehicle, Unit, InventoryUnit, CtmsVehicle, Car, Truck, VehicleMSRPCache]
+  Posting:             [Posting, BookableLoad, CtmsPosting]
+  Load:                [Load, Shipment, LoadLeg, LoadOrder, LoadInfo]
+  Order:               [Order, CarrierOrder, PurchaseOrder]
+  Negotiation:         [Negotiation, NegotiationOffer, CounterOffer, CtmsNegotiation]
+  Offer:               [Offer, Bid, CarrierOffer]
+  Dispatch:            [Dispatch, DispatchEvent, DispatchInstruction]
+  Booking:             [Booking, InstantBooking]
+  Driver:              [Driver, DriveawayDriver]
+  VehicleSpecification: [VehicleSpecification, Specifications, Specification]
+
+  # Money / payments
+  Transaction:         [Transaction, Payment, Charge, Settlement]
+  Invoice:             [Invoice, InvoiceLine]
+  BankAccount:         [BankAccount, CompanyBankAccount]
+  PaymentMethod:       [PaymentMethod, PayoutMethod]
+  Subscription:        [Subscription, CompanySubscription]
+
+  # Documents / attachments
+  Attachment:          [Attachment, Document, File, Media, CtmsAttachment]
+  Note:                [Note, AutoImsNote, InternalNote]
+
+  # Location / movement
+  Location:            [Location, Address, Place]
+  Trip:                [Trip, Route]
+  TripLeg:             [TripLeg, RouteLeg]
+  Stop:                [Stop, Waypoint]
+  GpsPosition:         [GpsPosition, Geolocation, TrackingPoint, LocationPing, Coordinates, GeoPoint]
+
+  # Comm
+  Message:             [Message, ChatMessage]
+  Discussion:          [Discussion, Conversation, Thread]
+  Participant:         [Participant, Member]
+  Notification:        [Notification, NotificationEvent]
+
+  # Workflow / temporal
+  Job:                 [Job, BackgroundJob, ScheduledJob]
+  OutboxMessage:       [OutboxMessage, OutboxEvent]
+  Lock:                [Lock, UnitLock, PessimisticLock]
+  VerificationCode:    [VerificationCode, OtpCode]
+
+  # CTMS / shipment lifecycle (Ship.Cars-specific)
+  Tender:              [Tender]
+  Contract:            [Contract, RateContract]
+  Quote:               [Quote, RateQuote]
+  Bookmark:            [Bookmark, LoadBookmark, SavedLoad]
+  SavedSearch:         [SavedSearch]
+
+# Splits: applied BEFORE alias merge. Force a specific (repo, name) tuple
+# into a distinct canonical when the same simple name means different
+# concepts. The clusterer logs every split it applies for review.
+splits:
+  # Chat message vs. queue message — same simple name, different concepts.
+  - canonical: ChatMessage
+    repos: [chat-backend, chat-frontend]
+    names: [Message, MessageEntity, MessageDto, ChatMessage]
+
+  - canonical: QueueMessage
+    repos: [notification-backend, notification-orchestrator, pusher, pubsub-exception-handler]
+    names: [Message, MessageDto]
+
+  # Notification entity (a stored notification record in chat/user repos)
+  # is different from a fire-and-forget Notification payload published to
+  # the "notification" Pub/Sub topic.
+  - canonical: NotificationPayload
+    repos: [pusher, notification-backend, notification-orchestrator, quarkus-notification-client]
+    names: [Notification, NotificationDto, NotificationPubSubDto]

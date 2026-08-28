@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>platform-backend Data Model</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+  :root {
+    --fg: #1f2328;
+    --muted: #57606a;
+    --border: #d0d7de;
+    --bg: #ffffff;
+    --bg-alt: #f6f8fa;
+    --accent: #0969da;
+    --hub: #bf3989;
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  }
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    color: var(--fg);
+    font: 16px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  }
+  main {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 40px 32px 80px;
+  }
+  h1 {
+    font-size: 30px;
+    margin: 0 0 8px;
+    letter-spacing: -0.01em;
+  }
+  h2 {
+    font-size: 22px;
+    margin: 40px 0 12px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--border);
+  }
+  h3 {
+    font-size: 17px;
+    margin: 28px 0 10px;
+    color: var(--fg);
+  }
+  p, li {
+    color: var(--fg);
+  }
+  .meta {
+    color: var(--muted);
+    font-size: 14px;
+    margin: 0 0 24px;
+  }
+  .meta code { font-size: 13px; }
+  .lead {
+    font-size: 16px;
+    background: var(--bg-alt);
+    border-left: 3px solid var(--accent);
+    padding: 12px 16px;
+    border-radius: 4px;
+    margin: 16px 0 24px;
+  }
+  .hub { color: var(--hub); font-weight: 600; }
+  code {
+    font-family: var(--mono);
+    font-size: 0.9em;
+    background: var(--bg-alt);
+    padding: 2px 5px;
+    border-radius: 3px;
+  }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 16px 0 24px;
+    font-size: 14px;
+  }
+  th, td {
+    text-align: left;
+    border: 1px solid var(--border);
+    padding: 8px 10px;
+    vertical-align: top;
+  }
+  th {
+    background: var(--bg-alt);
+    font-weight: 600;
+  }
+  td code { font-size: 12.5px; }
+  td.model {
+    white-space: nowrap;
+    font-weight: 600;
+  }
+  td.file code {
+    background: transparent;
+    color: var(--muted);
+    padding: 0;
+  }
+  .diagram {
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 16px;
+    margin: 12px 0 24px;
+    background: var(--bg);
+    overflow-x: auto;
+  }
+  .legend {
+    color: var(--muted);
+    font-size: 13px;
+    margin: -6px 0 12px;
+  }
+  ol li { margin-bottom: 10px; }
+  ul.hubs li { margin-bottom: 8px; }
+  .toc {
+    background: var(--bg-alt);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 14px 18px 14px 36px;
+    margin: 16px 0 32px;
+  }
+  .toc ol { margin: 0; padding-left: 18px; }
+  .toc li { margin: 4px 0; }
+  .toc a { color: var(--accent); text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  .note {
+    color: var(--muted);
+    font-size: 13.5px;
+  }
+</style>
+</head>
+<body>
+<main>
+  <h1><code>platform-backend</code> Data Model</h1>
+  <p class="meta">
+    Ship.Cars Loadmate Django monolith &middot; extracted 2026-05-15 &middot; source commit <code>1d5c2e6</code>
+  </p>
+
+  <div class="lead">
+    <strong>62 model classes</strong> across <strong>10 Django apps</strong> (2 abstract, 4 unmanaged DB views, 56 concrete tables). The monolith centers on three hub entities &mdash;
+    <span class="hub">users.Company</span>, <span class="hub">users.User</span>, and <span class="hub">epod.Load</span> &mdash; the FK targets that everything else points to. Apps verified empty of models: <code>documents/</code>, <code>location_tracking/</code>, <code>api/</code>, <code>pubsub/</code>, <code>user_management_integration/</code>.
+  </div>
+
+  <div class="toc">
+    <strong>Contents</strong>
+    <ol>
+      <li><a href="#inventory">Entity inventory by domain</a></li>
+      <li><a href="#hubs">Hub-entity relationship summary</a></li>
+      <li><a href="#diagrams">Visual representation (5 ER diagrams)</a></li>
+      <li><a href="#observations">Architectural observations</a></li>
+    </ol>
+  </div>
+
+  <h2 id="inventory">1. Entity Inventory by Domain</h2>
+  <p class="note">Concrete tables only unless noted. <strong>Bold</strong> rows are hub entities (5+ inbound FKs).</p>
+
+  <h3>1.1 Identity &amp; Access &mdash; <code>users</code> app</h3>
+  <table>
+    <thead><tr><th>Model</th><th>File</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td class="model"><span class="hub">User</span></td><td class="file"><code>users/models/user_models.py</code></td><td>AbstractBaseUser + PermissionsMixin. ~1000 LOC. <code>email</code> USERNAME_FIELD; driver flags (<code>is_driver</code>, <code>truck_capacity</code>, <code>truck_enclosed</code>); profile media; <code>roles</code> M2M; <code>custom_permissions</code> M2M; <code>company</code> FK.</td></tr>
+      <tr><td class="model">Role</td><td class="file"><code>users/models/user_models.py</code></td><td>M2M to CustomPermission (+ <code>extra_custom_permissions</code> M2M).</td></tr>
+      <tr><td class="model">CustomPermission</td><td class="file"><code>users/models/user_models.py</code></td><td>name + codename. Custom manager.</td></tr>
+      <tr><td class="model">Feature</td><td class="file"><code>users/models/user_models.py</code></td><td>Feature flags, cached manager.</td></tr>
+      <tr><td class="model">EventSubscription</td><td class="file"><code>users/models/user_models.py</code></td><td>FCM / Pub/Sub / SQS external subscription per user. <code>unique_together(user, external_id)</code>.</td></tr>
+      <tr><td class="model">SavedSearch</td><td class="file"><code>users/models/user_models.py</code></td><td>Per-user query JSON + notification toggles.</td></tr>
+      <tr><td class="model">DataDump</td><td class="file"><code>users/models/user_models.py</code></td><td>File + JSON export bundle.</td></tr>
+      <tr><td class="model">SignUp</td><td class="file"><code>users/models/user_models.py</code></td><td>Lead capture pre-User.</td></tr>
+      <tr><td class="model">WhatIsNew</td><td class="file"><code>users/models/user_models.py</code></td><td>Release-note feed item.</td></tr>
+      <tr><td class="model">BillingPeriod</td><td class="file"><code>users/models/user_models.py</code></td><td>Company billing window; M2M <code>users</code>.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>1.2 Companies, Contacts &amp; Onboarding &mdash; <code>users</code> app</h3>
+  <table>
+    <thead><tr><th>Model</th><th>File</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td class="model"><span class="hub">Company</span></td><td class="file"><code>users/models/user_models.py</code></td><td>~230 LOC. <code>is_shipper</code> / <code>is_carrier</code> / <code>is_api_integrator</code> flags; DOT/MC numbers; SaferWatch hooks; CD (Central Dispatch) alias; <code>features</code> M2M.</td></tr>
+      <tr><td class="model">Subscription</td><td class="file"><code>users/models/user_models.py</code></td><td>OneToOne Company. Trial / free-load counters.</td></tr>
+      <tr><td class="model">Billing</td><td class="file"><code>users/models/accounting_models.py</code></td><td>OneToOne Company (PK). Invoicing + factoring + bank account. Auto-created via post_save signal.</td></tr>
+      <tr><td class="model">CompanyLabel</td><td class="file"><code>users/models/user_models.py</code></td><td>Self-M2M-ish Company&rarr;Company labeling (owner, target).</td></tr>
+      <tr><td class="model">Contact</td><td class="file"><code>users/models/user_models.py</code></td><td>Per-Company contact directory; emails ArrayField, phones JSONField.</td></tr>
+      <tr><td class="model">NotificationContact</td><td class="file"><code>users/models/user_models.py</code></td><td>Contact &rarr; <code>notifications.NotificationEventType</code> M2M.</td></tr>
+      <tr><td class="model">CompanyDocument</td><td class="file"><code>users/models/user_models.py</code></td><td>Per-Company file uploads w/ status.</td></tr>
+      <tr><td class="model">CompanyCarrierInvitation</td><td class="file"><code>users/models/user_models.py</code></td><td>Broker-initiated invite batch.</td></tr>
+      <tr><td class="model">CompanyCarrierInvitationInfo</td><td class="file"><code>users/models/user_models.py</code></td><td>DOT-keyed FMCSA enrichment per invitation.</td></tr>
+      <tr><td class="model">CompanyCarrierInvitationCampaign</td><td class="file"><code>users/models/user_models.py</code></td><td>Named campaign + report file.</td></tr>
+      <tr><td class="model">CompanyCarrierInvitationEmail</td><td class="file"><code>users/models/user_models.py</code></td><td>Per-recipient invitation email + ShortLink.</td></tr>
+      <tr><td class="model">RequestCall</td><td class="file"><code>users/models/user_models.py</code></td><td>Phone-number callback request, OneToOne to invitation email.</td></tr>
+      <tr><td class="model">ExternalServiceCredentials</td><td class="file"><code>users/models/user_models.py</code></td><td>Per-Company third-party creds JSON.</td></tr>
+      <tr><td class="model">DriverLoads</td><td class="file"><code>users/models/user_models.py</code></td><td>Driver&harr;Load assignment audit (FK epod.Load + FK User + BillingPeriod).</td></tr>
+    </tbody>
+  </table>
+
+  <h3>1.3 Orders / Loads / Trips &mdash; <code>epod</code> app</h3>
+  <table>
+    <thead><tr><th>Model</th><th>File</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td class="model"><span class="hub">Load</span></td><td class="file"><code>epod/models.py</code></td><td>The monolith's center of gravity &mdash; ~3000 LOC, ~150 fields. Statuses new&rarr;accepted&rarr;assigned&rarr;picked-up&rarr;delivered&rarr;archived. Pickup/delivery/customer sections, geo PointFields, money decimals, ATG/tracking flags, source sync. FKs: carrier, shipper, dispatcher, driver, trip, parent_order (self), decline_reason, cancel_reason, active_change, active_revision. M2M to Trip.</td></tr>
+      <tr><td class="model">Trip</td><td class="file"><code>epod/models.py</code></td><td>Multi-load route container. FKs driver (User), company.</td></tr>
+      <tr><td class="model">LoadDeclineReason</td><td class="file"><code>epod/models.py</code></td><td>Slug + text lookup.</td></tr>
+      <tr><td class="model">LoadCancelReason</td><td class="file"><code>epod/models.py</code></td><td>Slug + text lookup.</td></tr>
+      <tr><td class="model">SignatureDeclineReason</td><td class="file"><code>epod/models.py</code></td><td>Slug + text lookup.</td></tr>
+      <tr><td class="model">LoadSyncStatus</td><td class="file"><code>epod/models.py</code></td><td>OneToOne Load. Two-stage pickup/delivery sync telemetry; OS/network metadata.</td></tr>
+      <tr><td class="model">ParseSourceFiles</td><td class="file"><code>epod/models.py</code></td><td>OCR/parse input + result per Load. FK creator (User), load.</td></tr>
+      <tr><td class="model">ArchivedLoad</td><td class="file"><code>epod/models.py</code></td><td>JSON snapshot of archived Load.</td></tr>
+      <tr><td class="model">Version</td><td class="file"><code>epod/models.py</code></td><td>Mobile client version lookup.</td></tr>
+      <tr><td class="model">Action</td><td class="file"><code>epod/models.py</code></td><td>Name-only enum table.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>1.4 Vehicles, Inspections &amp; Damages &mdash; <code>epod</code> app</h3>
+  <table>
+    <thead><tr><th>Model</th><th>File</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td class="model"><span class="hub">Vehicle</span></td><td class="file"><code>epod/models.py</code></td><td>~570 LOC. VIN/year/make/model, geo + odometer for pickup &amp; delivery, photos count, Monk.ai integration, drivetrain. FKs load, type, driver, parent_vehicle (self), active_change/revision, signature_decline_reason&times;2.</td></tr>
+      <tr><td class="model">VehicleType</td><td class="file"><code>epod/models.py</code></td><td>Name + landscape/portrait images.</td></tr>
+      <tr><td class="model"><span class="hub">Attachment</span></td><td class="file"><code>epod/models.py</code></td><td>~620 LOC. The polymorphic media model &mdash; photos, signatures, documents, BOLs. PointField location. FKs load, vehicle, creator, segment. Custom <code>ActiveAttachmentManager</code>.</td></tr>
+      <tr><td class="model">SketchSegment</td><td class="file"><code>epod/models.py</code></td><td>Sketch coordinate region (x0/y0/x1/y1).</td></tr>
+      <tr><td class="model">DamageType</td><td class="file"><code>epod/models.py</code></td><td>Legacy damage taxonomy.</td></tr>
+      <tr><td class="model">DamageEntry</td><td class="file"><code>epod/models.py</code></td><td>Damage location on Attachment + DamageType + SketchSegment.</td></tr>
+      <tr><td class="model">M22DamageArea</td><td class="file"><code>epod/models.py</code></td><td>M22 standard taxonomy (area code).</td></tr>
+      <tr><td class="model">M22DamageType</td><td class="file"><code>epod/models.py</code></td><td>M22 type code.</td></tr>
+      <tr><td class="model">M22DamageSeverity</td><td class="file"><code>epod/models.py</code></td><td>M22 severity code.</td></tr>
+      <tr><td class="model">M22Damage</td><td class="file"><code>epod/models.py</code></td><td>M22 damage per Vehicle.</td></tr>
+      <tr><td class="model">MonkDamage</td><td class="file"><code>epod/models.py</code></td><td>Monk.ai-generated damage per Vehicle.</td></tr>
+      <tr><td class="model">OtherTypeDamage</td><td class="file"><code>epod/models.py</code></td><td>Free-form damage with type + location strings.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>1.5 Invoicing &mdash; <code>epod</code> app</h3>
+  <table>
+    <thead><tr><th>Model</th><th>File</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td class="model">BaseInvoice <em>(abstract)</em></td><td class="file"><code>epod/models.py</code></td><td>Shared invoice fields (bill_to_*, services JSON, payment_*).</td></tr>
+      <tr><td class="model">Invoice</td><td class="file"><code>epod/models.py</code></td><td>Concrete invoice; FK load + attachment.</td></tr>
+      <tr><td class="model">RevisedInvoice</td><td class="file"><code>epod/models.py</code></td><td>Revision of Invoice with <code>revision_number</code>.</td></tr>
+      <tr><td class="model">InvoiceStatus</td><td class="file"><code>epod/models.py</code></td><td>Per-recipient send/open status. FK invoice or revision. <code>unique_together(invoice, recipient, status, external_id)</code>.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>1.6 Loadboard &mdash; <code>loadboard</code> app</h3>
+  <table>
+    <thead><tr><th>Model</th><th>File</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td class="model">Posting</td><td class="file"><code>loadboard/models.py</code></td><td>OneToOne to <code>epod.Load</code>. Statuses active/inactive/booked/claimed.</td></tr>
+      <tr><td class="model">Negotiation</td><td class="file"><code>loadboard/models.py</code></td><td>FK order (Load), carrier (Company), shipper (Company), last_offer.</td></tr>
+      <tr><td class="model">BaseOfferStatus <em>(abstract)</em></td><td class="file"><code>loadboard/models.py</code></td><td>Shared review_status enum.</td></tr>
+      <tr><td class="model">Offer</td><td class="file"><code>loadboard/models.py</code></td><td>FK negotiation, company, creator (User), review_actor (User). offer JSON.</td></tr>
+      <tr><td class="model">OfferActivityLog</td><td class="file"><code>loadboard/models.py</code></td><td>FK offer, actor. Audit trail of status changes.</td></tr>
+      <tr><td class="model">LoadDriverNegotiation</td><td class="file"><code>loadboard/models.py</code></td><td>FK load + user; type instant_booked/negotiated. <code>unique_together(load, user, type)</code>.</td></tr>
+      <tr><td class="model">ArchivedPosting</td><td class="file"><code>loadboard/models.py</code></td><td>JSON snapshot.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>1.7 Compliance &amp; Network &mdash; <code>compliance_network</code> app</h3>
+  <table>
+    <thead><tr><th>Model</th><th>File</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td class="model">ComplianceNetworkLink</td><td class="file"><code>compliance_network/models.py</code></td><td>The shipper&harr;carrier verification edge. FKs shipper (Company), carrier (Company). Statuses NOT_VERIFIED / UNDER_REVIEW / VERIFIED / SUSPENDED / NOT_VERIFIED_OFFERED. <code>unique_together(shipper, carrier)</code>.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>1.8 Notifications &mdash; <code>notifications</code> app</h3>
+  <table>
+    <thead><tr><th>Model</th><th>File</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td class="model">NotificationEventType</td><td class="file"><code>notifications/models.py</code></td><td>Slug + category (broker/driver/general/loadboard/hidden).</td></tr>
+      <tr><td class="model">Notification</td><td class="file"><code>notifications/models.py</code></td><td>FK event_type, load (epod.Load), actor (User). GenericForeignKey extra_object. <code>users</code> M2M through NotificationUser.</td></tr>
+      <tr><td class="model">NotificationUser</td><td class="file"><code>notifications/models.py</code></td><td>Per-user delivery state (read, seen).</td></tr>
+    </tbody>
+  </table>
+
+  <h3>1.9 Change Tracking &mdash; <code>changes</code> app + <code>epod.Event</code></h3>
+  <table>
+    <thead><tr><th>Model</th><th>File</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td class="model">Revision</td><td class="file"><code>changes/models.py</code></td><td>FK load (epod.Load), status_change_actor (User). Statuses pending/accepted/declined/new.</td></tr>
+      <tr><td class="model">Change</td><td class="file"><code>changes/models.py</code></td><td>FK revision; GenericForeignKey to any object via content_type + object_id. new_values/original_values JSON.</td></tr>
+      <tr><td class="model">Event</td><td class="file"><code>epod/models.py</code></td><td>App-level event/audit log row. FKs actor (User), carrier (Company), shipper (Company).</td></tr>
+    </tbody>
+  </table>
+
+  <h3>1.10 Misc / Stats / Reporting</h3>
+  <table>
+    <thead><tr><th>Model</th><th>File</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td class="model">ShortLink</td><td class="file"><code>shortner/models.py</code></td><td>URL shortener with expiration. Used by User.reset_pass_link and CompanyCarrierInvitationEmail.link.</td></tr>
+      <tr><td class="model">ReportTemplate</td><td class="file"><code>report_templates/models.py</code></td><td>Per-user JSON report definition.</td></tr>
+      <tr><td class="model">ActivePostings <em>(unmanaged view)</em></td><td class="file"><code>company_stats/models.py</code></td><td>DB view keyed by shipper_id.</td></tr>
+      <tr><td class="model">PostedPostings <em>(unmanaged view)</em></td><td class="file"><code>company_stats/models.py</code></td><td>DB view, last-month counts.</td></tr>
+      <tr><td class="model">Carriers <em>(unmanaged view)</em></td><td class="file"><code>company_stats/models.py</code></td><td>DB view, trusted carrier counts.</td></tr>
+      <tr><td class="model">Negotiations <em>(unmanaged view)</em></td><td class="file"><code>company_stats/models.py</code></td><td>DB view, negotiation counts.</td></tr>
+    </tbody>
+  </table>
+
+  <h2 id="hubs">2. Hub-Entity Relationship Summary</h2>
+  <p>Most non-trivial models point at one of three hubs:</p>
+  <ul class="hubs">
+    <li><strong><code>users.Company</code></strong> (carrier OR shipper OR both): ComplianceNetworkLink &times; 2, Negotiation &times; 2, Event &times; 2, Offer, Subscription, Billing, CompanyLabel &times; 2, CompanyDocument, ExternalServiceCredentials, Contact, NotificationContact, CompanyCarrierInvitation, CompanyCarrierInvitationInfo, BillingPeriod, User. <code>is_shipper</code> / <code>is_carrier</code> flags discriminate role; the same Company row can be both on different Loads.</li>
+    <li><strong><code>users.User</code></strong>: every actor/audit FK in the system &mdash; DriverLoads, Notification.actor, Vehicle.driver, Load.driver, Load.dispatcher, Trip.driver, Posting.posting_review_actor, Offer.creator/review_actor, Change/Revision actors, EventSubscription, SavedSearch, DataDump, ParseSourceFiles.creator, NotificationUser, ReportTemplate, BillingPeriod (M2M), &hellip;</li>
+    <li><strong><code>epod.Load</code></strong>: Vehicle, Attachment, Invoice, RevisedInvoice, ParseSourceFiles, LoadSyncStatus, DriverLoads, Notification, Revision, Posting (OneToOne), Negotiation, LoadDriverNegotiation, Load (self via parent_order), and <code>Load.trips</code> M2M to Trip.</li>
+  </ul>
+
+  <h2 id="diagrams">3. Visual Representation</h2>
+  <p class="legend">Five ER diagrams &mdash; one global hub map, four domain zooms. Notation: <code>||--o{</code> one-to-many, <code>||--||</code> one-to-one, <code>}o--o{</code> many-to-many.</p>
+
+  <h3>3.1 Top-level hub map</h3>
+  <div class="diagram">
+    <pre class="mermaid">
+erDiagram
+    Company ||--o{ User : "employs"
+    Company ||--o| Subscription : "has"
+    Company ||--o| Billing : "has"
+    Company ||--o{ Contact : "owns"
+    Company ||--o{ CompanyDocument : "owns"
+    Company ||--o{ Load : "shipper / carrier"
+    Company ||--o{ ComplianceNetworkLink : "shipper / carrier"
+    Company ||--o{ Negotiation : "shipper / carrier"
+    User    ||--o{ Load : "driver / dispatcher"
+    User    ||--o{ Vehicle : "driver"
+    User    ||--o{ Notification : "actor"
+    User    ||--o{ Offer : "creator / reviewer"
+    Load    ||--o{ Vehicle : "contains"
+    Load    ||--o{ Attachment : "has media"
+    Load    ||--o{ Invoice : "billed by"
+    Load    ||--o| Posting : "listed as"
+    Load    ||--o{ Negotiation : "negotiated via"
+    Load    ||--o{ Revision : "tracked by"
+    Load    ||--o{ Notification : "subject of"
+    Load    }o--o{ Trip : "grouped into"
+    </pre>
+  </div>
+
+  <h3>3.2 Identity, Company, Onboarding</h3>
+  <div class="diagram">
+    <pre class="mermaid">
+erDiagram
+    Company ||--o{ User : "company FK"
+    Company ||--|| Subscription : "OneToOne"
+    Company ||--|| Billing : "OneToOne"
+    Company ||--o{ CompanyLabel : "owner"
+    Company ||--o{ CompanyLabel : "target"
+    Company ||--o{ Contact : ""
+    Company ||--o{ NotificationContact : ""
+    Company ||--o{ CompanyDocument : ""
+    Company ||--o{ ExternalServiceCredentials : ""
+    Company ||--o{ CompanyCarrierInvitation : "broker"
+    Company ||--|| CompanyCarrierInvitationInfo : "OneToOne"
+    Company ||--o{ Feature : "M2M features"
+    CompanyCarrierInvitation ||--o{ CompanyCarrierInvitationEmail : ""
+    CompanyCarrierInvitation ||--o| CompanyCarrierInvitationCampaign : ""
+    CompanyCarrierInvitationEmail ||--|| RequestCall : "OneToOne"
+    CompanyCarrierInvitationEmail }o--|| ShortLink : "link"
+    User ||--o{ Role : "M2M roles"
+    Role ||--o{ CustomPermission : "M2M"
+    User ||--o{ CustomPermission : "M2M direct"
+    User ||--o| ShortLink : "reset_pass_link"
+    User ||--o{ SavedSearch : ""
+    User ||--o{ EventSubscription : ""
+    User ||--o{ DataDump : ""
+    User ||--o{ SignUp : ""
+    Company ||--o{ BillingPeriod : ""
+    BillingPeriod }o--o{ User : "M2M users"
+    NotificationContact }o--o{ NotificationEventType : "M2M notifications"
+    </pre>
+  </div>
+
+  <h3>3.3 Load, Trip, Vehicle, Inspections, Damages</h3>
+  <div class="diagram">
+    <pre class="mermaid">
+erDiagram
+    Load ||--o{ Vehicle : ""
+    Load ||--o{ Attachment : ""
+    Load ||--o| LoadSyncStatus : "OneToOne"
+    Load ||--o{ ParseSourceFiles : ""
+    Load ||--o{ DriverLoads : ""
+    Load ||--o| LoadDeclineReason : ""
+    Load ||--o| LoadCancelReason : ""
+    Load }o--o{ Trip : "M2M trips"
+    Load ||--o{ Load : "parent_order self-FK"
+    Vehicle ||--o{ Attachment : ""
+    Vehicle ||--o| VehicleType : ""
+    Vehicle ||--o{ M22Damage : ""
+    Vehicle ||--o{ MonkDamage : ""
+    Vehicle ||--o{ OtherTypeDamage : ""
+    Vehicle ||--o| SignatureDeclineReason : "pickup"
+    Vehicle ||--o| SignatureDeclineReason : "delivery"
+    Vehicle ||--o{ Vehicle : "parent_vehicle self-FK"
+    Attachment ||--o{ DamageEntry : ""
+    DamageEntry }o--|| DamageType : ""
+    DamageEntry }o--o| SketchSegment : ""
+    M22Damage }o--|| M22DamageArea : ""
+    M22Damage }o--|| M22DamageType : ""
+    M22Damage }o--|| M22DamageSeverity : ""
+    MonkDamage }o--|| M22DamageArea : ""
+    MonkDamage }o--|| M22DamageType : ""
+    Trip }o--o| User : "driver"
+    Trip }o--o| Company : ""
+    </pre>
+  </div>
+
+  <h3>3.4 Loadboard, Compliance, Invoicing</h3>
+  <div class="diagram">
+    <pre class="mermaid">
+erDiagram
+    Load ||--|| Posting : "OneToOne"
+    Load ||--o{ Negotiation : ""
+    Negotiation ||--o{ Offer : ""
+    Negotiation }o--|| Company : "carrier"
+    Negotiation }o--|| Company : "shipper"
+    Offer ||--o{ OfferActivityLog : ""
+    Offer }o--|| Company : ""
+    Offer }o--o| User : "creator"
+    Offer }o--o| User : "review_actor"
+    Load ||--o{ LoadDriverNegotiation : ""
+    LoadDriverNegotiation }o--|| User : ""
+    Posting }o--o| User : "review_actor"
+    Company ||--o{ ComplianceNetworkLink : "shipper"
+    Company ||--o{ ComplianceNetworkLink : "carrier"
+    Load ||--o{ Invoice : ""
+    Load ||--o{ RevisedInvoice : ""
+    Invoice ||--o{ InvoiceStatus : ""
+    RevisedInvoice ||--o{ InvoiceStatus : ""
+    Invoice ||--o{ RevisedInvoice : "revises"
+    Invoice }o--|| Attachment : ""
+    </pre>
+  </div>
+
+  <h3>3.5 Events, Changes, Notifications, Misc</h3>
+  <div class="diagram">
+    <pre class="mermaid">
+erDiagram
+    Event }o--o| User : "actor"
+    Event }o--o| Company : "carrier"
+    Event }o--o| Company : "shipper"
+    Revision }o--o| Load : ""
+    Revision }o--o| User : "status_change_actor"
+    Revision ||--o{ Change : ""
+    Change }o--o| ContentType : "GenericFK"
+    Load }o--o| Revision : "active_revision"
+    Load }o--o| Change : "active_change"
+    Vehicle }o--o| Revision : "active_revision"
+    Vehicle }o--o| Change : "active_change"
+    Notification }o--|| NotificationEventType : ""
+    Notification }o--o| Load : ""
+    Notification }o--o| User : "actor"
+    Notification }o--o| ContentType : "GenericFK"
+    Notification ||--o{ NotificationUser : ""
+    NotificationUser }o--|| User : ""
+    ReportTemplate }o--o| User : ""
+    ShortLink ||--o{ User : "reset_pass_link"
+    ShortLink ||--o{ CompanyCarrierInvitationEmail : ""
+    </pre>
+  </div>
+
+  <h2 id="observations">4. Architectural Observations</h2>
+  <p class="note">Observations on the data model itself, surfaced because they shape any future work touching this schema.</p>
+  <ol>
+    <li><strong><code>epod.Load</code> is a 150-field god-table.</strong> ~3000 LOC class. Pickup/delivery/customer sections are denormalized side-by-side; payment, tracking, ATG, source-sync, and audit metadata all live in the same row. Any schema change risks lock duration and migration cost. New columns should justify why they cannot live on <code>Vehicle</code>, <code>Trip</code>, <code>Invoice</code>, or a side table.</li>
+    <li><strong>Company plays four roles via boolean flags</strong> (<code>is_shipper</code>, <code>is_carrier</code>, <code>is_api_integrator</code>, <code>is_single_owner_operator</code>). The same row is both shipper and carrier on different Loads. FK relationships are <em>unconstrained at the DB level</em> w.r.t. role &mdash; <code>limit_choices_to</code> is admin-only. Application code must enforce the right flag on every read.</li>
+    <li><strong>Two parallel damage taxonomies coexist</strong> &mdash; the legacy <code>DamageType</code> / <code>DamageEntry</code> / <code>SketchSegment</code> system attached to Attachments, and the newer M22 standard (<code>M22Damage*</code> + <code>MonkDamage</code> for AI-generated entries). Both are populated in production; analytics queries need to union them.</li>
+    <li><strong>Change-tracking is itself a foreign concern.</strong> <code>Load.active_revision</code> / <code>active_change</code> and <code>Vehicle.active_revision</code> / <code>active_change</code> couple business tables to the audit table. <code>changes.Change</code> then uses a <code>GenericForeignKey</code> back to any object &mdash; a circular dependency that prevents schema-isolated extraction.</li>
+    <li><strong><code>Notification.extra_object</code> and <code>Change.object</code> are GenericForeignKeys.</strong> Cannot be enforced by DB FK constraints; orphaned rows are possible after cascading deletes elsewhere. Any migration to a typed schema needs to fan out these.</li>
+    <li><strong><code>company_stats</code> is four unmanaged DB views.</strong> <code>managed = False</code> &mdash; read-only, populated by SQL (likely materialized views or replication). Treat as a separate boundary; do not migrate via Django migrations.</li>
+    <li><strong>No FK from <code>epod</code> &rarr; <code>users</code> in the strict sense.</strong> Django uses <code>settings.AUTH_USER_MODEL</code> in Load.dispatcher / manual_pickup_user / manual_delivery_user, but plain <code>users.User</code> everywhere else. Both resolve to the same model in this codebase &mdash; flagged in case a future split changes that.</li>
+    <li><strong><code>Posting</code> is 1-to-1 with <code>Load</code></strong> but most of the loadboard surface (Negotiation, Offer) FKs back to Load directly, not Posting. The relational story is asymmetric &mdash; Posting is closer to a status flag for Load than an independent aggregate.</li>
+  </ol>
+
+</main>
+<script>
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: 'default',
+    securityLevel: 'loose',
+    er: { useMaxWidth: true }
+  });
+</script>
+</body>
+</html>
