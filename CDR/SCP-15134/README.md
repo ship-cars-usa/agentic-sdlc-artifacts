@@ -64,9 +64,10 @@ No new database table, Elasticsearch index, or Pub/Sub schema is introduced. The
 
 ## Rollout
 
-**§5 · rollout & sequencing ⚠️**
-
+> ⚠️ **§5 · rollout & sequencing**
+>
 > **Sequencing (upstream first).**
+>
 > 1. **cube / models-lib** — confirm or publish the client version whose PostingReadDto carries the faster-pay flag (already in cube via SCP-15099).
 > 2. **load-recommender** — bump that dependency and add the field (plus the SmartHaul method passthrough, Q1) to the LoadDto and its converter. One converter feeds both the REST list and the WebSocket push, so both surfaces light up together.
 > 3. **platform-frontend** — bump the entities/globals packages, port the Faster Pay component, add the card blocks, and add the Source=LoadScout Mixpanel property. Depends on step 2 being live.

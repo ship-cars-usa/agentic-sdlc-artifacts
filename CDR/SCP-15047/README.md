@@ -10,7 +10,11 @@
 
 ## Context
 
-The **Accept Revisions** bulk action leaves orders showing **Active Revision** after processing. **Root cause (confirmed in QA logs):** `process_bulk_action` serializes a *pre-mutation* `Load` instance — `Revision.accept()` mutates a **different** instance (`revision.load`), so the worker's `load` keeps the stale `active_revision_id`/`update_time` in memory and feeds both the HTTP response and `event.new_value`. Postgres and ES end up correct; the staleness lives only in the browser Redux store (survives navigation, not a reload). **Decision:** `refresh_from_db()` after `action_func`, and stop unconditionally overwriting the fresh `event.new_value`. No schema, endpoint-shape, or migration change.
+The **Accept Revisions** bulk action leaves orders showing **Active Revision** after processing.
+
+**Root cause (confirmed in QA logs):** `process_bulk_action` serializes a *pre-mutation* `Load` instance — `Revision.accept()` mutates a **different** instance (`revision.load`), so the worker's `load` keeps the stale `active_revision_id`/`update_time` in memory and feeds both the HTTP response and `event.new_value`. Postgres and ES end up correct; the staleness lives only in the browser Redux store (survives navigation, not a reload).
+
+**Decision:** `refresh_from_db()` after `action_func`, and stop unconditionally overwriting the fresh `event.new_value`. No schema, endpoint-shape, or migration change.
 
 ## §4 · REST API & DTO
 
@@ -45,6 +49,14 @@ The **Accept Revisions** bulk action leaves orders showing **Active Revision** a
 
 ## Rollout
 
-**§5 · rollout & sequencing ⚠️**
-
-> Producer-before-consumer. (1) Record the response contract on the ticket (values corrected, no shape change). (2) Fix `platform-backend` — this is the only change that fixes the bug. (3) Verify in QA: response returns `active_revision_id: null` and syncer logs a *non-noop* `loads` write; the grid must clear **without** a browser refresh. (4) `ctms-frontend` + `carrier-packages-frontend` alignment runs in parallel — neither fixes the bug, don't merge them as the fix. (5) No syncer change. **Risk:** the stale second-pass `event.new_value` reaches *all* load-update subscribers; syncer is shielded by its version guard, but audit the other subscribers for one without an equivalent guard.
+> ⚠️ **§5 · rollout & sequencing**
+>
+> Producer-before-consumer.
+>
+> 1. Record the response contract on the ticket (values corrected, no shape change).
+> 2. Fix `platform-backend` — this is the only change that fixes the bug.
+> 3. Verify in QA: response returns `active_revision_id: null` and syncer logs a *non-noop* `loads` write; the grid must clear **without** a browser refresh.
+> 4. `ctms-frontend` + `carrier-packages-frontend` alignment runs in parallel — neither fixes the bug, don't merge them as the fix.
+> 5. No syncer change.
+>
+> **Risk:** the stale second-pass `event.new_value` reaches *all* load-update subscribers; syncer is shielded by its version guard, but audit the other subscribers for one without an equivalent guard.

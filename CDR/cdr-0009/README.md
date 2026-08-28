@@ -10,7 +10,11 @@
 
 ## Context
 
-Mid-transit driver reassignment needs a distinct signal — the enum has `DRIVER_ASSIGNED`/`DRIVER_UNASSIGNED` but no reassignment value. Consumers deserialize `action` into `PubSubActionTypeEnum`, so a new value is **not tolerant-reader safe** by default. **Decision:** add `DRIVER_REASSIGNED` to the shared `posting-dtos` enum, upgrade and deploy consumers first, then emit it. **Blast radius:** posting-backend producer → shared `posting-dtos` Maven artifact → driveaway-backend, autoims-backend, integration-executor, invoices.
+Mid-transit driver reassignment needs a distinct signal — the enum has `DRIVER_ASSIGNED`/`DRIVER_UNASSIGNED` but no reassignment value. Consumers deserialize `action` into `PubSubActionTypeEnum`, so a new value is **not tolerant-reader safe** by default.
+
+**Decision:** add `DRIVER_REASSIGNED` to the shared `posting-dtos` enum, upgrade and deploy consumers first, then emit it.
+
+**Blast radius:** posting-backend producer → shared `posting-dtos` Maven artifact → driveaway-backend, autoims-backend, integration-executor, invoices.
 
 ## §3 · Pub/Sub event
 
@@ -36,6 +40,12 @@ Mid-transit driver reassignment needs a distinct signal — the enum has `DRIVER
 
 ## Rollout
 
-**§5 · rollout — the breaking bit ⚠️**
-
-> Adding an enum value is not tolerant-reader safe by default — Jackson throws on an unknown enum unless a consumer sets `READ_UNKNOWN_ENUM_VALUES_AS_NULL`. Order: (1) publish the bumped `posting-dtos` artifact, (2) recompile + deploy every consumer (driveaway-backend, autoims-backend, integration-executor, invoices), (3) only then have posting-backend emit `DRIVER_REASSIGNED`. Consumers-before-producer.
+> ⚠️ **§5 · rollout — the breaking bit**
+>
+> Adding an enum value is not tolerant-reader safe by default — Jackson throws on an unknown enum unless a consumer sets `READ_UNKNOWN_ENUM_VALUES_AS_NULL`. Order:
+>
+> 1. publish the bumped `posting-dtos` artifact
+> 2. recompile + deploy every consumer (driveaway-backend, autoims-backend, integration-executor, invoices)
+> 3. only then have posting-backend emit `DRIVER_REASSIGNED`
+>
+> Consumers-before-producer.

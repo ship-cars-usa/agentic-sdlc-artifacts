@@ -10,7 +10,13 @@
 
 ## Context
 
-Dispatchers need to mark an order expedited so it sorts to the top of carrier search and drives an SLA badge. **Decision:** add a boolean `expedited` to the order model, propagate it additively through the firehose, index it on `loads`, and surface it read-only via cube's order search. **Blast radius:** platform-backend (PG + event) → carrierlb.events → syncer → ES loads → cube API. *Illustrative — not a real shipped change.*
+Dispatchers need to mark an order expedited so it sorts to the top of carrier search and drives an SLA badge.
+
+**Decision:** add a boolean `expedited` to the order model, propagate it additively through the firehose, index it on `loads`, and surface it read-only via cube's order search.
+
+**Blast radius:** platform-backend (PG + event) → carrierlb.events → syncer → ES loads → cube API.
+
+*Illustrative — not a real shipped change.*
 
 ## §2a · PostgreSQL
 
@@ -65,6 +71,8 @@ Dispatchers need to mark an order expedited so it sorts to the top of carrier se
 
 ## Rollout
 
-**§5 · rollout ⚠️**
-
-> Additive end-to-end, so no coordinated cutover — but the ES step is a drop-and-rebuild: adding `expedited` to `CtmsOrderDocumentDto` changes the reflection mapping, and `CtmsOrdersIndexResyncer` deletes and recreates `loads`, then full-resyncs. Schedule that window. Deploy producer (platform-backend) before consumers rely on the field.
+> ⚠️ **§5 · rollout**
+>
+> Additive end-to-end, so no coordinated cutover — but the ES step is a drop-and-rebuild: adding `expedited` to `CtmsOrderDocumentDto` changes the reflection mapping, and `CtmsOrdersIndexResyncer` deletes and recreates `loads`, then full-resyncs.
+>
+> Schedule that window. Deploy producer (platform-backend) before consumers rely on the field.

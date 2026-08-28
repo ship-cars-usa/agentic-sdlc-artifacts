@@ -10,7 +10,11 @@
 
 ## Context
 
-Today inventory listing is `POST /v1/units` with an `InventoryFilterDto` body, offset-paged via Spring `Pageable` (`page`/`size`/`sort`), returning `PageInventoryUnitsDto`. Offset paging degrades on deep pages. **Decision:** add a `/v2` with cursor paging in a new `rest/v2` package; `/v1` untouched. **Blast radius:** inventory-backend controller + response DTO, platform-frontend consumer. No data, event, or ES change. *(V2* names are proposed — no `rest/v2` exists yet.)*
+Today inventory listing is `POST /v1/units` with an `InventoryFilterDto` body, offset-paged via Spring `Pageable` (`page`/`size`/`sort`), returning `PageInventoryUnitsDto`. Offset paging degrades on deep pages.
+
+**Decision:** add a `/v2` with cursor paging in a new `rest/v2` package; `/v1` untouched.
+
+**Blast radius:** inventory-backend controller + response DTO, platform-frontend consumer. No data, event, or ES change. *(V2* names are proposed — no `rest/v2` exists yet.)*
 
 ## §4 · REST API & DTO
 
@@ -41,6 +45,8 @@ Today inventory listing is `POST /v1/units` with an `InventoryFilterDto` body, o
 
 ## Rollout
 
-**§5 · rollout ℹ️**
-
-> Purely additive; `/v1` stays. The list today is `POST /v1/units` (filter in body), offset-paged — v2 keeps the POST-with-body shape but returns a cursor. Track platform-frontend migration before any `/v1` removal (its own CDR).
+> ℹ️ **§5 · rollout**
+>
+> Purely additive; `/v1` stays. The list today is `POST /v1/units` (filter in body), offset-paged — v2 keeps the POST-with-body shape but returns a cursor.
+>
+> Track platform-frontend migration before any `/v1` removal (its own CDR).

@@ -41,6 +41,12 @@ Because the column is **nullable**, the backfill can distinguish `NULL` (never c
 
 ## Rollout
 
-**§5 · rollout ⚠️**
-
-> Single platform-backend deploy delivers both halves (AlterField default + RunPython backfill). Forward-only data migration — the reverse is RunPython.noop (do NOT auto-revert flipped values). Decide Q1 first (NULL-only vs blanket-including-False) — it sets the backfill WHERE clause; blanket would silently re-enable carriers who deliberately turned it OFF. No FE/mobile deploy: both pick up the new server value automatically; already-open mobile sessions roll out on next refresh (iOS cold-start; Android online dashboard reload — flag-push websocket enums exist but are unwired). Verify the FE null-render trap (a leftover NULL renders the toggle OFF via `!!company.field`) with a post-migration QA case. Audit tests that assume the factory default-off (test_loadboard.py / test_users.py) in the same PR.
+> ⚠️ **§5 · rollout**
+>
+> Single platform-backend deploy delivers both halves (AlterField default + RunPython backfill). Forward-only data migration — the reverse is RunPython.noop (do NOT auto-revert flipped values).
+>
+> Decide Q1 first (NULL-only vs blanket-including-False) — it sets the backfill WHERE clause; blanket would silently re-enable carriers who deliberately turned it OFF.
+>
+> No FE/mobile deploy: both pick up the new server value automatically; already-open mobile sessions roll out on next refresh (iOS cold-start; Android online dashboard reload — flag-push websocket enums exist but are unwired).
+>
+> Verify the FE null-render trap (a leftover NULL renders the toggle OFF via `!!company.field`) with a post-migration QA case. Audit tests that assume the factory default-off (test_loadboard.py / test_users.py) in the same PR.

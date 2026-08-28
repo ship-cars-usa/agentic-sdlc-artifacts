@@ -10,7 +10,11 @@
 
 ## Context
 
-The driver app reports compass heading; propagate it on the location-log event for ETA refinement. The published record has `id`, `loadId`, `location{latitude,longitude}`, `status`, `driverId`, `carrierId`, `shipperId`, `shipperLoadId`, `createdAt` — no `heading` yet. **Decision:** add it additively; tolerant readers (`@JsonIgnoreProperties`) absorb it. **Blast radius:** location-history-backend publisher + record DTO; syncer `LHLogIndexListener` consumes; the matching ES field on `lh-load-location-logs` follows in a linked CDR.
+The driver app reports compass heading; propagate it on the location-log event for ETA refinement. The published record has `id`, `loadId`, `location{latitude,longitude}`, `status`, `driverId`, `carrierId`, `shipperId`, `shipperLoadId`, `createdAt` — no `heading` yet.
+
+**Decision:** add it additively; tolerant readers (`@JsonIgnoreProperties`) absorb it.
+
+**Blast radius:** location-history-backend publisher + record DTO; syncer `LHLogIndexListener` consumes; the matching ES field on `lh-load-location-logs` follows in a linked CDR.
 
 ## §3 · Pub/Sub event
 
@@ -35,6 +39,8 @@ The driver app reports compass heading; propagate it on the location-log event f
 
 ## Rollout
 
-**§5 · rollout ℹ️**
-
-> Additive and tolerant-reader safe. Deploy the publisher whenever ready; consumers read `heading` when they choose. syncer maps `location.latitude/longitude` into a `GeoPointReadDto`; the new ES field on `lh-load-location-logs` is a separate resync — split into a linked CDR so this one carries no ES risk.
+> ℹ️ **§5 · rollout**
+>
+> Additive and tolerant-reader safe. Deploy the publisher whenever ready; consumers read `heading` when they choose.
+>
+> syncer maps `location.latitude/longitude` into a `GeoPointReadDto`; the new ES field on `lh-load-location-logs` is a separate resync — split into a linked CDR so this one carries no ES risk.

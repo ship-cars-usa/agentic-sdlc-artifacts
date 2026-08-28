@@ -10,7 +10,11 @@
 
 ## Context
 
-Dispatchers search carriers by partial name substrings. The company `name` field carries ngram analysis so prefix/substring matches work. **This documents the real shipped mapping.** Because the mapping is reflection-derived, the analyzer lives as an annotation on the DTO, and any change to it is a drop-and-rebuild — there are no aliases. **Blast radius:** syncer (CompanyReadDto annotation) → `companies` (and `verified-companies`) rebuild → cube query builder.
+Dispatchers search carriers by partial name substrings. The company `name` field carries ngram analysis so prefix/substring matches work.
+
+**This documents the real shipped mapping.** Because the mapping is reflection-derived, the analyzer lives as an annotation on the DTO, and any change to it is a drop-and-rebuild — there are no aliases.
+
+**Blast radius:** syncer (CompanyReadDto annotation) → `companies` (and `verified-companies`) rebuild → cube query builder.
 
 ## §2b · Elasticsearch
 
@@ -35,6 +39,8 @@ Dispatchers search carriers by partial name substrings. The company `name` field
 
 ## Rollout
 
-**§5 · rollout — the risky step ⚠️**
-
-> `CompanyIndexResyncer.initializeIndex()` deletes and recreates **both** `companies` and `verified-companies`, then streams a full resync. The ngram annotation on `name` is already in place; documenting it this way captures *why* any analyzer change here is a rebuild, not a hot mapping update — schedule the window and note the search-degradation interval.
+> ⚠️ **§5 · rollout — the risky step**
+>
+> `CompanyIndexResyncer.initializeIndex()` deletes and recreates **both** `companies` and `verified-companies`, then streams a full resync.
+>
+> The ngram annotation on `name` is already in place; documenting it this way captures *why* any analyzer change here is a rebuild, not a hot mapping update — schedule the window and note the search-degradation interval.

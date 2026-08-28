@@ -10,7 +10,11 @@
 
 ## Context
 
-Retried payout requests double-pay carriers. **Decision:** a client-supplied `idempotency_key`, enforced by a partial unique index, makes a retried `POST /internal/v1/transactions` a no-op — the DB unique index, not `@Version`, is the fence. **This documents the real shipped migration V10.0. Blast radius:** payment-backend Postgres + one JAX-RS endpoint; no event, no ES.
+Retried payout requests double-pay carriers.
+
+**Decision:** a client-supplied `idempotency_key`, enforced by a partial unique index, makes a retried `POST /internal/v1/transactions` a no-op — the DB unique index, not `@Version`, is the fence.
+
+**This documents the real shipped migration V10.0. Blast radius:** payment-backend Postgres + one JAX-RS endpoint; no event, no ES.
 
 ## §2a · PostgreSQL
 
@@ -50,6 +54,10 @@ Retried payout requests double-pay carriers. **Decision:** a client-supplied `id
 
 ## Rollout
 
-**§5 · rollout ⚠️**
-
-> Real shipped change via `TransactionInternalController`. Migration adds the column to `transactions` and `transactions_aud` plus the partial unique index; create such an index `CONCURRENTLY` to avoid locking the hot table. Forward-only DB → rollback is a follow-up migration. No resync, no event coordination. Note: the resource uses MicroProfile OpenAPI while its DTOs use Swagger v3 — a real per-repo split.
+> ⚠️ **§5 · rollout**
+>
+> Real shipped change via `TransactionInternalController`. Migration adds the column to `transactions` and `transactions_aud` plus the partial unique index; create such an index `CONCURRENTLY` to avoid locking the hot table.
+>
+> Forward-only DB → rollback is a follow-up migration. No resync, no event coordination.
+>
+> Note: the resource uses MicroProfile OpenAPI while its DTOs use Swagger v3 — a real per-repo split.

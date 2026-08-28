@@ -61,8 +61,8 @@ The manual status update is served by `platform-backend`'s `manual_pickup`/`manu
 
 ## Rollout
 
-**§5 · rollout ⚠️**
-
+> ⚠️ **§5 · rollout**
+>
 > Expand-then-enforce — ship every consumer before the flag flip.
 >
 > 1. **platform-backend**: add the optional `vehicles[].vin` request field + the validation, ship with the Unleash flag **OFF** — a safe no-op for every existing client.
