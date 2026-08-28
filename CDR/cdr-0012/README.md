@@ -4,6 +4,8 @@
 
 **Services:** `loadboard-backend`, `syncer`
 
+**Legend:** 🟢 added · 🟡 updated · 🔴 removed · 🔵 reused
+
 ![Design diagram](./diagram.svg)
 
 ## Context
@@ -16,7 +18,7 @@ Rename `expiration_time` → `expires_at` on the `postings` table for clarity. T
 
 | Column | Type | Change | Null | Default / backfill |
 | --- | --- | --- | --- | --- |
-| `expiration_time → expires_at` | `timestamptz` | renamed | no | backfill expires_at := expiration_time; dual-write |
+| `expiration_time → expires_at` | `timestamptz` | 🟡 renamed | no | backfill expires_at := expiration_time; dual-write |
 
 ## Where it lives & how it's wired
 

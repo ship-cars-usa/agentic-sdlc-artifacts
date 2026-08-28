@@ -4,6 +4,8 @@
 
 **Services:** `inventory-backend`, `platform-frontend`
 
+**Legend:** 🟢 added · 🟡 updated · 🔴 removed · 🔵 reused
+
 ![Design diagram](./diagram.svg)
 
 ## Context
@@ -17,14 +19,14 @@ Today inventory listing is `POST /v1/units` with an `InventoryFilterDto` body, o
 | In-code | External | Method | Change | Request DTO | Response DTO |
 | --- | --- | --- | --- | --- | --- |
 | `/v1/units` | `/api/inventory/v1/units` | POST |  | `InventoryFilterDto` | `PageInventoryUnitsDto (current · offset)` |
-| `/v2/units` | `/api/inventory/v2/units` | POST | added | `InventoryFilterDto` | `PageInventoryUnitsV2Dto` |
+| `/v2/units` | `/api/inventory/v2/units` | POST | 🟢 added | `InventoryFilterDto` | `PageInventoryUnitsV2Dto` |
 
 *DTO field delta · proposed PageInventoryUnitsV2Dto*
 
 | DTO | Field | Type | Change | JSON name |
 | --- | --- | --- | --- | --- |
-| `PageInventoryUnitsV2Dto` | `items` | `List<InventoryUnitDto>` | added | `items` |
-| `PageInventoryUnitsV2Dto` | `nextCursor` | `String` | added | `nextCursor` |
+| `PageInventoryUnitsV2Dto` | `items` | `List<InventoryUnitDto>` | 🟢 added | `items` |
+| `PageInventoryUnitsV2Dto` | `nextCursor` | `String` | 🟢 added | `nextCursor` |
 
 ## Where it lives & how it's wired
 

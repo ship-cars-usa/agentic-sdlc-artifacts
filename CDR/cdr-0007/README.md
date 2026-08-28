@@ -4,6 +4,8 @@
 
 **Services:** `platform-backend`, `syncer`, `cube`
 
+**Legend:** 🟢 added · 🟡 updated · 🔴 removed · 🔵 reused
+
 ![Design diagram](./diagram.svg)
 
 ## Context
@@ -16,7 +18,7 @@ Dispatchers need to mark an order expedited so it sorts to the top of carrier se
 
 | Column | Type | Change | Null | Default / backfill |
 | --- | --- | --- | --- | --- |
-| `expedited` | `boolean` | added | no | default false; no data backfill |
+| `expedited` | `boolean` | 🟢 added | no | default false; no data backfill |
 
 ## §2b · Elasticsearch
 
@@ -24,7 +26,7 @@ Dispatchers need to mark an order expedited so it sorts to the top of carrier se
 
 | ES field | Java field : type | ES type | Change | Indexed? |
 | --- | --- | --- | --- | --- |
-| `expedited` | `expedited : Boolean` | `boolean` | added | yes |
+| `expedited` | `expedited : Boolean` | `boolean` | 🟢 added | yes |
 
 ## §3 · Pub/Sub event
 
@@ -32,7 +34,7 @@ Dispatchers need to mark an order expedited so it sorts to the top of carrier se
 
 | Field | Type | Change | JSON name | Subscriber action |
 | --- | --- | --- | --- | --- |
-| `expedited` | `bool` | added | `expedited` | syncer reads it; 15 others tolerate |
+| `expedited` | `bool` | 🟢 added | `expedited` | syncer reads it; 15 others tolerate |
 
 ## §4 · REST API & DTO
 
@@ -40,13 +42,13 @@ Dispatchers need to mark an order expedited so it sorts to the top of carrier se
 
 | In-code | External | Method | Change | Response DTO |
 | --- | --- | --- | --- | --- |
-| `/v1/orders/search` | `/api/cube/v1/orders/search` | POST | changed | `OrderRowDto` |
+| `/v1/orders/search` | `/api/cube/v1/orders/search` | POST | 🟡 changed | `OrderRowDto` |
 
 *DTO field delta*
 
 | DTO | Field | Type | Change | JSON name |
 | --- | --- | --- | --- | --- |
-| `OrderRowDto` | `expedited` | `Boolean` | added | `expedited` |
+| `OrderRowDto` | `expedited` | `Boolean` | 🟢 added | `expedited` |
 
 ## Where it lives & how it's wired
 

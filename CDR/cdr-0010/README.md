@@ -4,6 +4,8 @@
 
 **Services:** `syncer`, `cube`
 
+**Legend:** 🟢 added · 🟡 updated · 🔴 removed · 🔵 reused
+
 ![Design diagram](./diagram.svg)
 
 ## Context
@@ -16,7 +18,7 @@ Dispatchers search carriers by partial name substrings. The company `name` field
 
 | ES field | Java field : type | ES type | Change | Analyzer |
 | --- | --- | --- | --- | --- |
-| `name` | `name : String` | `text + keyword` | changed | `none → ngram` |
+| `name` | `name : String` | `text + keyword` | 🟡 changed | `none → ngram` |
 
 ## Where it lives & how it's wired
 

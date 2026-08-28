@@ -4,6 +4,8 @@
 
 **Services:** `platform-backend`, `carrier-packages-frontend`, `platform-frontend`, `ctms-frontend`, `epod-ios`, `epod-android`
 
+**Legend:** 🟢 added · 🟡 updated · 🔴 removed · 🔵 reused
+
 ![Design diagram](./diagram.svg)
 
 ## Context
@@ -20,16 +22,16 @@ The manual status update is served by `platform-backend`'s `manual_pickup`/`manu
 
 | Field | Type | Change | Required | Notes |
 | --- | --- | --- | --- | --- |
-| `vehicles[].id` | `int` | added | with vin | Vehicle id to attach the VIN to |
-| `vehicles[].vin` | `string(6..17)` | added | when flag on & edit-vehicle enabled | Full VIN or last-6; persisted via Vehicle.set_vin; 400 if missing when required |
-| `(behavior)` | `gate` | validated | conditional | is_enabled('<flag>') && !load.forbid_vehicle_update → each non-dry-run vehicle must have VIN; validated before status mutation/emit |
+| `vehicles[].id` | `int` | 🟢 added | with vin | Vehicle id to attach the VIN to |
+| `vehicles[].vin` | `string(6..17)` | 🟢 added | when flag on & edit-vehicle enabled | Full VIN or last-6; persisted via Vehicle.set_vin; 400 if missing when required |
+| `(behavior)` | `gate` | 🟡 validated | conditional | is_enabled('<flag>') && !load.forbid_vehicle_update → each non-dry-run vehicle must have VIN; validated before status mutation/emit |
 
 *Read contract · load serializer (gate exposure)*
 
 | Field | Type | Change | Notes |
 | --- | --- | --- | --- |
-| `forbid_vehicle_update` | `bool` | reused | Already serialized (load_serializer.py:267, order_api.py:2221) — clients read it to know when VIN is required (inverse = edit-vehicle enabled) |
-| `vin_required` | `bool (computed)` | optional | Optional explicit convenience flag on the load = flag-on && !forbid_vehicle_update, so clients don't re-derive the gate |
+| `forbid_vehicle_update` | `bool` | 🔵 reused | Already serialized (load_serializer.py:267, order_api.py:2221) — clients read it to know when VIN is required (inverse = edit-vehicle enabled) |
+| `vin_required` | `bool (computed)` | 🟢 optional | Optional explicit convenience flag on the load = flag-on && !forbid_vehicle_update, so clients don't re-derive the gate |
 
 ## §4b · DTO — client request models
 
@@ -37,9 +39,9 @@ The manual status update is served by `platform-backend`'s `manual_pickup`/`manu
 
 | Client | DTO | Change | File |
 | --- | --- | --- | --- |
-| CTMS web | `StatusUpdateRequest` | extend | entities-frontend-package/src/actions/loads.ts:1641 |
-| epod-ios | `ManualPickupRequest / ManualDeliveryRequest` | extend | Model/Orders/Manual Status Update/*.swift:11 |
-| epod-android | `ChangeOrderStatusToPickupBody / ...DeliveryBody` | extend | module_data/model/json_requests/*.kt:5 |
+| CTMS web | `StatusUpdateRequest` | 🟡 extend | entities-frontend-package/src/actions/loads.ts:1641 |
+| epod-ios | `ManualPickupRequest / ManualDeliveryRequest` | 🟡 extend | Model/Orders/Manual Status Update/*.swift:11 |
+| epod-android | `ChangeOrderStatusToPickupBody / ...DeliveryBody` | 🟡 extend | module_data/model/json_requests/*.kt:5 |
 
 ## Where it lives & how it's wired
 

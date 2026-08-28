@@ -4,6 +4,8 @@
 
 **Services:** `platform-backend`, `platform-frontend`, `epod-ios`, `epod-android`
 
+**Legend:** 🟢 added · 🟡 updated · 🔴 removed · 🔵 reused
+
 ![Design diagram](./diagram.svg)
 
 ## Context
@@ -20,8 +22,8 @@ Because the column is **nullable**, the backfill can distinguish `NULL` (never c
 
 | Column | Type | Change | Null | Default / backfill |
 | --- | --- | --- | --- | --- |
-| `drivers_enabled` | `boolean` | default + backfill | y (unchanged) | add default=True & db_default=True; RunPython UPDATE ... SET =true WHERE drivers_enabled IS NULL (NULL-only, per Q1) |
-| `drivers_enabled_accept` | `boolean` | default + backfill | y (unchanged) | add default=True & db_default=True; RunPython UPDATE ... SET =true WHERE drivers_enabled_accept IS NULL (NULL-only, per Q1) |
+| `drivers_enabled` | `boolean` | 🟡 default + backfill | y (unchanged) | add default=True & db_default=True; RunPython UPDATE ... SET =true WHERE drivers_enabled IS NULL (NULL-only, per Q1) |
+| `drivers_enabled_accept` | `boolean` | 🟡 default + backfill | y (unchanged) | add default=True & db_default=True; RunPython UPDATE ... SET =true WHERE drivers_enabled_accept IS NULL (NULL-only, per Q1) |
 
 ## Where it lives & how it's wired
 

@@ -4,6 +4,8 @@
 
 **Services:** `location-history-backend`, `syncer`
 
+**Legend:** 🟢 added · 🟡 updated · 🔴 removed · 🔵 reused
+
 ![Design diagram](./diagram.svg)
 
 ## Context
@@ -16,7 +18,7 @@ The driver app reports compass heading; propagate it on the location-log event f
 
 | Field | Type | Change | JSON name | Subscriber action |
 | --- | --- | --- | --- | --- |
-| `heading` | `Double` | added | `heading` | syncer LHLogIndexListener reads it; others tolerate |
+| `heading` | `Double` | 🟢 added | `heading` | syncer LHLogIndexListener reads it; others tolerate |
 
 ## Where it lives & how it's wired
 

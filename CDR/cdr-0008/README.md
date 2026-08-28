@@ -4,6 +4,8 @@
 
 **Services:** `payment-backend`
 
+**Legend:** 🟢 added · 🟡 updated · 🔴 removed · 🔵 reused
+
 ![Design diagram](./diagram.svg)
 
 ## Context
@@ -16,8 +18,8 @@ Retried payout requests double-pay carriers. **Decision:** a client-supplied `id
 
 | Column | Type | Change | Null | Default / backfill |
 | --- | --- | --- | --- | --- |
-| `idempotency_key` | `varchar(128)` | added | yes | also added to Envers transactions_aud |
-| `uq_transactions_idempotency_key` | `partial unique index` | added | — | (from_company_id, idempotency_key) WHERE … NOT NULL |
+| `idempotency_key` | `varchar(128)` | 🟢 added | yes | also added to Envers transactions_aud |
+| `uq_transactions_idempotency_key` | `partial unique index` | 🟢 added | — | (from_company_id, idempotency_key) WHERE … NOT NULL |
 
 ## §4 · REST API & DTO
 
@@ -25,13 +27,13 @@ Retried payout requests double-pay carriers. **Decision:** a client-supplied `id
 
 | In-code | External | Method | Change | Request DTO | Response DTO |
 | --- | --- | --- | --- | --- | --- |
-| `/internal/v1/transactions` | `/api/payment/internal/v1/transactions` | POST | changed | `CreateTransactionDto` | `TransactionDto` |
+| `/internal/v1/transactions` | `/api/payment/internal/v1/transactions` | POST | 🟡 changed | `CreateTransactionDto` | `TransactionDto` |
 
 *DTO field delta · CreateTransactionDto (Java record)*
 
 | DTO | Field | Type | Change | JSON name |
 | --- | --- | --- | --- | --- |
-| `CreateTransactionDto` | `idempotencyKey` | `String @Size(max 128)` | added | `idempotencyKey` |
+| `CreateTransactionDto` | `idempotencyKey` | `String @Size(max 128)` | 🟢 added | `idempotencyKey` |
 
 ## Where it lives & how it's wired
 

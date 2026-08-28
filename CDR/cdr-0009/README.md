@@ -4,6 +4,8 @@
 
 **Services:** `posting-backend`, `driveaway-backend`, `autoims-backend`, `integration-executor`, `invoices`
 
+**Legend:** 🟢 added · 🟡 updated · 🔴 removed · 🔵 reused
+
 ![Design diagram](./diagram.svg)
 
 ## Context
@@ -16,8 +18,8 @@ Mid-transit driver reassignment needs a distinct signal — the enum has `DRIVER
 
 | Field | Type | Change | JSON name | Subscriber action |
 | --- | --- | --- | --- | --- |
-| `action` | `PubSubActionTypeEnum` | new enum value | `action` | each consumer must handle DRIVER_REASSIGNED (or tolerate unknown enums) |
-| `actionData.reassignedDriverId` | `Long (illustrative)` | added | `reassignedDriverId` | carried in the existing PubSubActionDataDto |
+| `action` | `PubSubActionTypeEnum` | 🟢 new enum value | `action` | each consumer must handle DRIVER_REASSIGNED (or tolerate unknown enums) |
+| `actionData.reassignedDriverId` | `Long (illustrative)` | 🟢 added | `reassignedDriverId` | carried in the existing PubSubActionDataDto |
 
 ## Where it lives & how it's wired
 

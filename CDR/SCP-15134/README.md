@@ -4,6 +4,8 @@
 
 **Services:** `platform-frontend`, `load-recommender`, `cube`, `platform-backend`
 
+**Legend:** 🟢 added · 🟡 updated · 🔴 removed · 🔵 reused
+
 ![Design diagram](./diagram.svg)
 
 ## Context
@@ -20,9 +22,9 @@ No new database table, Elasticsearch index, or Pub/Sub schema is introduced. The
 
 | Field | Type | Change | Null | Source / notes |
 | --- | --- | --- | --- | --- |
-| `faster_payment_enabled` | `Boolean` | added | y | from cube PostingReadDto (SCP-15099) after client bump; map in LoadDtoConverter.convertPostingReadDtoToOutDto |
-| `payment_method_billing (proposed)` | `String` | added | y | additive SmartHaul-capable method passthrough; existing coarse payment_method (BILLING/CASH/USHIP) can't express smarthaul_payments — see Q1 |
-| `shipper_user_management_id` | `String` | unchanged (consumed) | n | already present; FE tooltip key for the terms fetch |
+| `faster_payment_enabled` | `Boolean` | 🟢 added | y | from cube PostingReadDto (SCP-15099) after client bump; map in LoadDtoConverter.convertPostingReadDtoToOutDto |
+| `payment_method_billing (proposed)` | `String` | 🟢 added | y | additive SmartHaul-capable method passthrough; existing coarse payment_method (BILLING/CASH/USHIP) can't express smarthaul_payments — see Q1 |
+| `shipper_user_management_id` | `String` | 🔵 unchanged (consumed) | n | already present; FE tooltip key for the terms fetch |
 
 ## §4b · Upstream read model (cube / models-lib)
 
@@ -30,8 +32,8 @@ No new database table, Elasticsearch index, or Pub/Sub schema is introduced. The
 
 | Artifact / DTO | Change | Detail |
 | --- | --- | --- |
-| `loadboard-client 0.6.3 → 0.6.17+ (load-recommender pom.xml:116)` | version bump | so the returned PostingReadDto carries faster_payment_enabled (already on cube out-DTO v2 :157-158) |
-| `models-lib readmodels.es.PostingReadDto.faster_payment_enabled` | only if bump route rejected | fallback: add + populate the field on the shared read model (wider blast radius) — see Q6 |
+| `loadboard-client 0.6.3 → 0.6.17+ (load-recommender pom.xml:116)` | 🟡 version bump | so the returned PostingReadDto carries faster_payment_enabled (already on cube out-DTO v2 :157-158) |
+| `models-lib readmodels.es.PostingReadDto.faster_payment_enabled` | 🟢 only if bump route rejected | fallback: add + populate the field on the shared read model (wider blast radius) — see Q6 |
 
 ## §4c · Frontend consumption (platform-frontend)
 
@@ -39,9 +41,9 @@ No new database table, Elasticsearch index, or Pub/Sub schema is introduced. The
 
 | Item | Change | Detail |
 | --- | --- | --- |
-| `entities-frontend-package 20.0.0 → ^20.2.0; globals-frontend-package 6.22.1 → ^6.24.0` | pkg bump | for Load.fasterPaymentEnabled, the fasterPaymentConfiguration model/selectors/thunk, AnalyticsEvent.FasterPayInfo |
-| `load.fasterPaymentEnabled → Faster Pay label/tooltip; load.paymentMethod → SmartHaul logo` | consumes | PaymentVehiclesInfo.tsx; terms via fetchFasterPaymentConfigurationByShipperIds([shipperUserManagementId]) → platform-backend |
-| `Faster Pay Info event + property Source=LoadScout` | analytics | AnalyticsEvent.FasterPayInfo call site fires with zero props today |
+| `entities-frontend-package 20.0.0 → ^20.2.0; globals-frontend-package 6.22.1 → ^6.24.0` | 🟡 pkg bump | for Load.fasterPaymentEnabled, the fasterPaymentConfiguration model/selectors/thunk, AnalyticsEvent.FasterPayInfo |
+| `load.fasterPaymentEnabled → Faster Pay label/tooltip; load.paymentMethod → SmartHaul logo` | 🔵 consumes | PaymentVehiclesInfo.tsx; terms via fetchFasterPaymentConfigurationByShipperIds([shipperUserManagementId]) → platform-backend |
+| `Faster Pay Info event + property Source=LoadScout` | 🟡 analytics | AnalyticsEvent.FasterPayInfo call site fires with zero props today |
 
 ## Where it lives & how it's wired
 

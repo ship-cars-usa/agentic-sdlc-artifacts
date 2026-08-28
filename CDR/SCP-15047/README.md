@@ -4,6 +4,8 @@
 
 **Services:** `platform-backend`, `ctms-frontend`, `carrier-packages-frontend`
 
+**Legend:** 🟢 added · 🟡 updated · 🔴 removed · 🔵 reused
+
 ![Design diagram](./diagram.svg)
 
 ## Context
@@ -16,9 +18,9 @@ The **Accept Revisions** bulk action leaves orders showing **Active Revision** a
 
 | Field | Before | After | Change | Note |
 | --- | --- | --- | --- | --- |
-| `results[].active_revision_id` | `stale (pre-accept)` | `null` | corrected | was non-null despite accepted=true |
-| `results[].active_change_id` | `stale (pre-accept)` | `null` | corrected | same stale-instance cause |
-| `results[].update_time` | `pre-mutation ts` | `post-accept ts` | corrected | auto_now bump now reflected |
+| `results[].active_revision_id` | `stale (pre-accept)` | `null` | 🟡 corrected | was non-null despite accepted=true |
+| `results[].active_change_id` | `stale (pre-accept)` | `null` | 🟡 corrected | same stale-instance cause |
+| `results[].update_time` | `pre-mutation ts` | `post-accept ts` | 🟡 corrected | auto_now bump now reflected |
 
 ## §3 · Pub/Sub event
 
@@ -26,7 +28,7 @@ The **Accept Revisions** bulk action leaves orders showing **Active Revision** a
 
 | Field | Change | Note |
 | --- | --- | --- |
-| `event.new_value` | corrected | built from the post-mutation instance; stop overwriting the correct populate_new_data() re-fetch at :4449-4450 |
+| `event.new_value` | 🟡 corrected | built from the post-mutation instance; stop overwriting the correct populate_new_data() re-fetch at :4449-4450 |
 
 ## Where it lives & how it's wired
 
