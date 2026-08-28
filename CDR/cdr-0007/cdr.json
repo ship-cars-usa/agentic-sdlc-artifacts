@@ -1,0 +1,71 @@
+{
+  "cdr": "CDR-0007",
+  "title": "Add expedited flag to CTMS orders",
+  "status": "example",
+  "statusNote": "illustrative walkthrough",
+  "date": "2026-08-28",
+  "author": "hristo.savov@ship.cars",
+  "jira": "SCP-XXXXX",
+  "services": ["platform-backend", "syncer", "cube"],
+  "changeTypes": ["postgres", "elasticsearch", "pubsub", "rest-api", "dto"],
+  "diagram": "diagram.svg",
+  "context": "Dispatchers need to mark an order expedited so it sorts to the top of carrier search and drives an SLA badge. **Decision:** add a boolean `expedited` to the order model, propagate it additively through the firehose, index it on `loads`, and surface it read-only via cube's order search. **Blast radius:** platform-backend (PG + event) → carrierlb.events → syncer → ES loads → cube API. *Illustrative — not a real shipped change.*",
+  "sections": [
+    {
+      "label": "§2a · PostgreSQL", "tag": "changed",
+      "tables": [{
+        "caption": "Column delta · public.loadboard_order",
+        "columns": [{"name":"Column","mono":true},{"name":"Type","mono":true},{"name":"Change","change":true},{"name":"Null","mono":false},{"name":"Default / backfill","mono":false}],
+        "rows": [{"change":"add","label":"added","cells":["expedited","boolean","","no","default false; no data backfill"]}]
+      }]
+    },
+    {
+      "label": "§2b · Elasticsearch", "tag": "changed",
+      "tables": [{
+        "caption": "Mapping delta · loads",
+        "columns": [{"name":"ES field","mono":true},{"name":"Java field : type","mono":true},{"name":"ES type","mono":true},{"name":"Change","change":true},{"name":"Indexed?","mono":false}],
+        "rows": [{"change":"add","label":"added","cells":["expedited","expedited : Boolean","boolean","","yes"]}]
+      }]
+    },
+    {
+      "label": "§3 · Pub/Sub event", "tag": "field added",
+      "tables": [{
+        "caption": "Payload delta · event.new_value (order)",
+        "columns": [{"name":"Field","mono":true},{"name":"Type","mono":true},{"name":"Change","change":true},{"name":"JSON name","mono":true},{"name":"Subscriber action","mono":false}],
+        "rows": [{"change":"add","label":"added","cells":["expedited","bool","","expedited","syncer reads it; 15 others tolerate"]}]
+      }]
+    },
+    {
+      "label": "§4 · REST API & DTO", "tag": "field added",
+      "tables": [
+        {
+          "caption": "Endpoint · cube · Spring @RestController · springdoc",
+          "columns": [{"name":"In-code","mono":true},{"name":"External","mono":true},{"name":"Method","mono":false},{"name":"Change","change":true},{"name":"Response DTO","mono":true}],
+          "rows": [{"change":"chg","label":"changed","cells":["/v1/orders/search","/api/cube/v1/orders/search","POST","","OrderRowDto"]}]
+        },
+        {
+          "caption": "DTO field delta",
+          "columns": [{"name":"DTO","mono":true},{"name":"Field","mono":true},{"name":"Type","mono":true},{"name":"Change","change":true},{"name":"JSON name","mono":true}],
+          "rows": [{"change":"add","label":"added","cells":["OrderRowDto","expedited","Boolean","","expedited"]}]
+        }
+      ]
+    }
+  ],
+  "detail": {
+    "cap": "Where it lives & how it's wired",
+    "items": [
+      ["service", "platform-backend · Django/DRF", false],
+      ["instance", "platform · DB epod", false],
+      ["host var", "PLATFORM_BACKEND_DB_HOST", true],
+      ["model", "loadboard/models.py::Order", true],
+      ["ES writer/reader", "syncer → cube", false],
+      ["ES index", "loads (no alias)", false],
+      ["topic", "cars.ship.production.carrierlb.events", true],
+      ["compat", "additive · tolerant readers", false]
+    ]
+  },
+  "rollout": {
+    "tone": "warn", "label": "§5 · rollout",
+    "text": "Additive end-to-end, so no coordinated cutover — but the ES step is a drop-and-rebuild: adding `expedited` to `CtmsOrderDocumentDto` changes the reflection mapping, and `CtmsOrdersIndexResyncer` deletes and recreates `loads`, then full-resyncs. Schedule that window. Deploy producer (platform-backend) before consumers rely on the field."
+  }
+}

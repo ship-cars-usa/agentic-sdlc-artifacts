@@ -1,0 +1,86 @@
+{
+  "cdr": "CDR-0008",
+  "title": "Idempotency key on carrier payment transactions",
+  "status": "shipped",
+  "statusNote": "real · shipped as V10.0",
+  "date": "2026-08-28",
+  "author": "hristo.savov@ship.cars",
+  "jira": "SCP-XXXXX",
+  "services": ["payment-backend"],
+  "changeTypes": ["postgres", "rest-api", "dto"],
+  "diagram": "diagram.svg",
+  "context": "Retried payout requests double-pay carriers. **Decision:** a client-supplied `idempotency_key`, enforced by a partial unique index, makes a retried `POST /internal/v1/transactions` a no-op — the DB unique index, not `@Version`, is the fence. **This documents the real shipped migration V10.0. Blast radius:** payment-backend Postgres + one JAX-RS endpoint; no event, no ES.",
+  "sections": [
+    {
+      "label": "§2a · PostgreSQL",
+      "tag": "changed",
+      "tables": [
+        {
+          "caption": "Column delta · public.transactions (+ transactions_aud)",
+          "columns": [
+            {"name": "Column", "mono": true},
+            {"name": "Type", "mono": true},
+            {"name": "Change", "change": true},
+            {"name": "Null", "mono": false},
+            {"name": "Default / backfill", "mono": false}
+          ],
+          "rows": [
+            {"change": "add", "label": "added", "cells": ["idempotency_key", "varchar(128)", "", "yes", "also added to Envers transactions_aud"]},
+            {"change": "add", "label": "added", "cells": ["uq_transactions_idempotency_key", "partial unique index", "", "—", "(from_company_id, idempotency_key) WHERE … NOT NULL"]}
+          ]
+        }
+      ]
+    },
+    {
+      "label": "§4 · REST API & DTO",
+      "tag": "changed",
+      "tables": [
+        {
+          "caption": "Endpoint · payment-backend · Quarkus JAX-RS · MicroProfile (DTOs: Swagger v3)",
+          "columns": [
+            {"name": "In-code", "mono": true},
+            {"name": "External", "mono": true},
+            {"name": "Method", "mono": false},
+            {"name": "Change", "change": true},
+            {"name": "Request DTO", "mono": true},
+            {"name": "Response DTO", "mono": true}
+          ],
+          "rows": [
+            {"change": "chg", "label": "changed", "cells": ["/internal/v1/transactions", "/api/payment/internal/v1/transactions", "POST", "", "CreateTransactionDto", "TransactionDto"]}
+          ]
+        },
+        {
+          "caption": "DTO field delta · CreateTransactionDto (Java record)",
+          "columns": [
+            {"name": "DTO", "mono": true},
+            {"name": "Field", "mono": true},
+            {"name": "Type", "mono": true},
+            {"name": "Change", "change": true},
+            {"name": "JSON name", "mono": true}
+          ],
+          "rows": [
+            {"change": "add", "label": "added", "cells": ["CreateTransactionDto", "idempotencyKey", "String @Size(max 128)", "", "idempotencyKey"]}
+          ]
+        }
+      ]
+    }
+  ],
+  "detail": {
+    "cap": "Where it lives & how it's wired",
+    "items": [
+      ["service", "payment-backend · resources module", false],
+      ["file", "db-migration/…/V10.0__add_idempotency_key_to_transactions.sql", true],
+      ["instance", "users · DB payment", false],
+      ["entity", "TransactionEntity (Panache)", true],
+      ["host var", "Helm-injected (none in repo)", false],
+      ["base", "BaseDbEntity · @SQLDelete soft-delete · Envers @Audited", false],
+      ["tool", "Flyway (flat V{maj.min})", false],
+      ["readers", "none observed", false]
+    ]
+  },
+  "rollout": {
+    "tone": "warn",
+    "label": "§5 · rollout",
+    "text": "Real shipped change via `TransactionInternalController`. Migration adds the column to `transactions` and `transactions_aud` plus the partial unique index; create such an index `CONCURRENTLY` to avoid locking the hot table. Forward-only DB → rollback is a follow-up migration. No resync, no event coordination. Note: the resource uses MicroProfile OpenAPI while its DTOs use Swagger v3 — a real per-repo split."
+  }
+}

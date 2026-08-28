@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 230" role="img" aria-label="loadboard-backend writes and migrates the postings table; syncer's resyncer reads the renamed column directly from that database over the lbv3 reactive datasource before indexing into ES loadboard-postings, so the rename breaks the resync SQL, while the steady-state listener path uses the Pub/Sub payload.">
+  <defs>
+    <marker id="ar12" markerWidth="10" markerHeight="10" refX="7.5" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="var(--accent)"/></marker>
+    <marker id="ar12r" markerWidth="10" markerHeight="10" refX="7.5" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="var(--rem)"/></marker>
+  </defs>
+  <rect x="10" y="20" width="170" height="70" rx="11" class="n-box"/>
+  <text x="24" y="48" class="n-title">loadboard-backend</text><text x="24" y="68" class="n-sub">owns the schema</text>
+  <path d="M180 55 H296" class="flow hot" marker-end="url(#ar12)"/><text x="238" y="47" class="flow-lbl hot" text-anchor="middle">writes / migrates</text>
+  <rect x="298" y="20" width="170" height="70" rx="11" class="n-box touched"/>
+  <text x="312" y="48" class="n-title">PG · postings</text><text x="312" y="68" class="store">main instance</text>
+  <text x="298" y="12" class="badge chg">rename column</text>
+  <rect x="288" y="150" width="190" height="70" rx="11" class="n-box touched"/>
+  <text x="302" y="178" class="n-title">syncer · resyncer</text><text x="302" y="198" class="n-sub">LoadboardV3IndexResyncer</text>
+  <path d="M383 150 V92" class="flow brkline" marker-end="url(#ar12r)"/>
+  <text x="393" y="126" class="flow-lbl rem">resync reads lbv3 directly — breaks</text>
+  <path d="M478 185 H564" class="flow hot" marker-end="url(#ar12)"/><text x="521" y="177" class="flow-lbl hot" text-anchor="middle">index</text>
+  <rect x="566" y="150" width="184" height="70" rx="11" class="n-box"/>
+  <text x="580" y="178" class="n-title">ES · loadboard-postings</text><text x="580" y="198" class="n-sub">owned by syncer</text>
+</svg>

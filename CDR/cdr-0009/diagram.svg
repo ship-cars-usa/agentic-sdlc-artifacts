@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 210" role="img" aria-label="posting-backend publishes LoadLegMsgPubSubDto to the posting-v2-state topic, consumed by driveaway-backend, autoims-backend, integration-executor and invoices; a legacy V1 DTO already goes to the posting-state topic in parallel.">
+  <defs><marker id="ar9" markerWidth="10" markerHeight="10" refX="7.5" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="var(--accent)"/></marker></defs>
+  <rect x="10" y="70" width="164" height="72" rx="11" class="n-box touched"/>
+  <text x="24" y="98" class="n-title">posting-backend</text><text x="24" y="118" class="n-sub">Spring 3.2.12 · publisher</text>
+  <text x="10" y="62" class="badge chg">+ enum value</text>
+  <path d="M174 106 H270" class="flow hot" marker-end="url(#ar9)"/><text x="222" y="98" class="flow-lbl hot" text-anchor="middle">publish</text>
+  <rect x="272" y="70" width="164" height="72" rx="11" class="n-box touched"/>
+  <text x="286" y="98" class="n-title">posting-v2-state</text><text x="286" y="118" class="n-sub">camelCase topic</text>
+  <text x="272" y="62" class="badge chg">DRIVER_REASSIGNED</text>
+  <path d="M436 92 H556" class="flow hot" marker-end="url(#ar9)"/><text x="496" y="84" class="flow-lbl hot" text-anchor="middle">consume</text>
+  <path d="M436 120 H556" class="flow hot" marker-end="url(#ar9)"/>
+  <rect x="558" y="58" width="192" height="46" rx="10" class="n-box touched"/>
+  <text x="572" y="86" class="n-title">driveaway-backend</text>
+  <rect x="558" y="112" width="192" height="46" rx="10" class="n-box touched"/>
+  <text x="572" y="140" class="n-title">autoims-backend</text>
+  <text x="272" y="176" class="n-sub">+ integration-executor, invoices · shared artifact ship.cars:posting-dtos</text>
+  <text x="272" y="192" class="n-sub">legacy V1LoadLegMsgPubSubDto → posting-state (deprecated) runs in parallel</text>
+</svg>

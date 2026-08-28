@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 980 360" font-family="system-ui,-apple-system,sans-serif" font-size="13">
+  <defs>
+    <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--accent)"/></marker>
+    <marker id="ahr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--rem)"/></marker>
+  </defs>
+
+  <text x="20" y="28" font-weight="700" font-size="15">SCP-15134 — LoadScout Faster Pay: the BE gap vs the loadboard twin</text>
+
+  <!-- LoadBoard lane (reference, FE-only) -->
+  <text x="20" y="74" font-weight="600" fill="var(--muted)">LoadBoard CTMS (SCP-14956) — FE-only, already shipped</text>
+  <rect x="20" y="86" width="168" height="54" rx="9" class="n-box"/>
+  <text x="104" y="110" text-anchor="middle" class="n-title">loadboard-frontend</text>
+  <text x="104" y="128" text-anchor="middle" class="n-sub">PostingListItem</text>
+  <rect x="360" y="86" width="168" height="54" rx="9" class="n-box"/>
+  <text x="444" y="110" text-anchor="middle" class="n-title">cube</text>
+  <text x="444" y="128" text-anchor="middle" class="n-sub store">PostingReadDto · flag ✓</text>
+  <line x1="188" y1="113" x2="356" y2="113" class="flow hot" marker-end="url(#ah)"/>
+  <text x="272" y="105" text-anchor="middle" class="flow-lbl hot">reads cube directly</text>
+
+  <!-- LoadScout lane (this story) -->
+  <text x="20" y="190" font-weight="600" fill="var(--muted)">LoadScout CTMS (SCP-15134) — this story · FE + BE</text>
+  <rect x="20" y="202" width="168" height="54" rx="9" class="n-box touched"/>
+  <text x="104" y="226" text-anchor="middle" class="n-title">platform-frontend</text>
+  <text x="104" y="244" text-anchor="middle" class="n-sub">NotificationListItem</text>
+  <rect x="270" y="202" width="176" height="54" rx="9" class="n-box touched"/>
+  <text x="358" y="222" text-anchor="middle" class="n-title">load-recommender</text>
+  <text x="358" y="240" text-anchor="middle" class="n-sub store">LoadDto · flag ✗</text>
+  <rect x="528" y="202" width="168" height="54" rx="9" class="n-box"/>
+  <text x="612" y="222" text-anchor="middle" class="n-title">cube / models-lib</text>
+  <text x="612" y="240" text-anchor="middle" class="n-sub store">read model (bump)</text>
+  <rect x="778" y="202" width="182" height="54" rx="9" class="n-box"/>
+  <text x="869" y="222" text-anchor="middle" class="n-title">platform-backend</text>
+  <text x="869" y="240" text-anchor="middle" class="n-sub store">terms config (reuse)</text>
+
+  <line x1="188" y1="229" x2="266" y2="229" class="flow hot" marker-end="url(#ah)"/>
+  <text x="212" y="196" text-anchor="middle" class="flow-lbl hot">GET /recommendations</text>
+  <line x1="446" y1="229" x2="524" y2="229" class="flow brkline" marker-end="url(#ahr)"/>
+  <text x="486" y="196" text-anchor="middle" class="flow-lbl rem">flag missing</text>
+
+  <rect x="270" y="150" width="176" height="20" rx="6" class="badge add"/>
+  <text x="358" y="164" text-anchor="middle" class="flow-lbl hot">add faster_payment_enabled</text>
+
+  <!-- terms fetch (separate, faint) -->
+  <path d="M104 256 C104 318 869 318 869 258" fill="none" class="flow faint" marker-end="url(#ah)"/>
+  <text x="486" y="336" text-anchor="middle" class="flow-lbl">tooltip terms fetched separately per shipper (fetchFasterPaymentConfigurationByShipperIds)</text>
+</svg>

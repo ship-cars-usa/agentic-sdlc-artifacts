@@ -1,0 +1,251 @@
+{
+  "cdr": "SCP-15134",
+  "title": "[Montway][Faster Payments][Post Release] Loads eligible for Faster Pay in LoadScout Recommendations - CTMS",
+  "status": "proposed",
+  "statusNote": "groomed 2026-08-28",
+  "date": "2026-08-28",
+  "author": "hristo.savov@ship.cars",
+  "jira": "SCP-15134",
+  "services": [
+    "platform-frontend",
+    "load-recommender",
+    "cube",
+    "platform-backend"
+  ],
+  "changeTypes": [
+    "rest-api",
+    "dto"
+  ],
+  "diagram": "diagram.svg",
+  "context": "Show **Faster Pay Available** (label + info-icon tooltip with terms and fees), the **SmartHaul Payments** method, and the original **payment term** on the **CTMS LoadScout recommendation cards** — information only.\n\nThis is the LoadScout twin of the already-shipped **LoadBoard CTMS** feature (SCP-14956 / SCP-15059), with one decisive difference. The loadboard front-end reads postings **directly from cube**, which already carries the faster-pay flag (SCP-15099), so that work was front-end only. The LoadScout card instead renders a load object served by **load-recommender**, and that payload does **not** carry the flag — so this story needs **both back-end and front-end** work.\n\nNo new database table, Elasticsearch index, or Pub/Sub schema is introduced. The change is one additive DTO field on an existing REST + WebSocket contract, plus a client/read-model version bump so the value reaches load-recommender. Tooltip terms are reused as-is from platform-backend's Faster Payment configuration API, fetched by the front-end per shipper (they are not on the load payload).",
+  "sections": [
+    {
+      "label": "§4 · REST API & DTO (load-recommender)",
+      "tag": "changed",
+      "tables": [
+        {
+          "caption": "Field delta · LoadDto (embedded in LoadRecommendationDto.entity; served on GET /api/load-recommender/v1/recommendations AND the LOAD_RECOMMENDATION_* WebSocket push)",
+          "columns": [
+            {
+              "name": "Field",
+              "mono": true
+            },
+            {
+              "name": "Type",
+              "mono": true
+            },
+            {
+              "name": "Change",
+              "change": true
+            },
+            {
+              "name": "Null",
+              "mono": false
+            },
+            {
+              "name": "Source / notes"
+            }
+          ],
+          "rows": [
+            {
+              "change": "add",
+              "label": "added",
+              "cells": [
+                "faster_payment_enabled",
+                "Boolean",
+                "",
+                "y",
+                "from cube PostingReadDto (SCP-15099) after client bump; map in LoadDtoConverter.convertPostingReadDtoToOutDto"
+              ]
+            },
+            {
+              "change": "add",
+              "label": "added",
+              "cells": [
+                "payment_method_billing (proposed)",
+                "String",
+                "",
+                "y",
+                "additive SmartHaul-capable method passthrough; existing coarse payment_method (BILLING/CASH/USHIP) can't express smarthaul_payments — see Q1"
+              ]
+            },
+            {
+              "change": "chg",
+              "label": "unchanged (consumed)",
+              "cells": [
+                "shipper_user_management_id",
+                "String",
+                "",
+                "n",
+                "already present; FE tooltip key for the terms fetch"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "label": "§4b · Upstream read model (cube / models-lib)",
+      "tag": "changed",
+      "tables": [
+        {
+          "caption": "Dependency / DTO alignment · PostingReadDto returned by load-recommender's cube client",
+          "columns": [
+            {
+              "name": "Artifact / DTO",
+              "mono": true
+            },
+            {
+              "name": "Change",
+              "change": true
+            },
+            {
+              "name": "Detail"
+            }
+          ],
+          "rows": [
+            {
+              "change": "chg",
+              "label": "version bump",
+              "cells": [
+                "loadboard-client 0.6.3 → 0.6.17+ (load-recommender pom.xml:116)",
+                "",
+                "so the returned PostingReadDto carries faster_payment_enabled (already on cube out-DTO v2 :157-158)"
+              ]
+            },
+            {
+              "change": "add",
+              "label": "only if bump route rejected",
+              "cells": [
+                "models-lib readmodels.es.PostingReadDto.faster_payment_enabled",
+                "",
+                "fallback: add + populate the field on the shared read model (wider blast radius) — see Q6"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "label": "§4c · Frontend consumption (platform-frontend)",
+      "tag": "changed",
+      "tables": [
+        {
+          "caption": "Consumed fields + package bump · LoadScout card (no new contract; renders the LoadDto above)",
+          "columns": [
+            {
+              "name": "Item",
+              "mono": true
+            },
+            {
+              "name": "Change",
+              "change": true
+            },
+            {
+              "name": "Detail"
+            }
+          ],
+          "rows": [
+            {
+              "change": "chg",
+              "label": "pkg bump",
+              "cells": [
+                "entities-frontend-package 20.0.0 → ^20.2.0; globals-frontend-package 6.22.1 → ^6.24.0",
+                "",
+                "for Load.fasterPaymentEnabled, the fasterPaymentConfiguration model/selectors/thunk, AnalyticsEvent.FasterPayInfo"
+              ]
+            },
+            {
+              "change": "add",
+              "label": "consumes",
+              "cells": [
+                "load.fasterPaymentEnabled → Faster Pay label/tooltip; load.paymentMethod → SmartHaul logo",
+                "",
+                "PaymentVehiclesInfo.tsx; terms via fetchFasterPaymentConfigurationByShipperIds([shipperUserManagementId]) → platform-backend"
+              ]
+            },
+            {
+              "change": "chg",
+              "label": "analytics",
+              "cells": [
+                "Faster Pay Info event + property Source=LoadScout",
+                "",
+                "AnalyticsEvent.FasterPayInfo call site fires with zero props today"
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "detail": {
+    "cap": "Where it lives & how it's wired",
+    "items": [
+      [
+        "service",
+        "load-recommender · api-dtos + services (LoadDto owner; REST + WS)",
+        false
+      ],
+      [
+        "file",
+        "api-dtos/.../dtos/out/LoadDto.java · services/.../converters/impl/LoadDtoConverter.java:16-79",
+        true
+      ],
+      [
+        "file",
+        "resources/.../rest/RecommendationsController.java:158,189 (GET /api/load-recommender/v1/recommendations)",
+        true
+      ],
+      [
+        "dep",
+        "pom.xml:116 loadboard-client 0.6.3 · pom.xml:108 models-lib 1.0.65",
+        true
+      ],
+      [
+        "service",
+        "platform-frontend · CTMS LoadScout micro-frontend",
+        false
+      ],
+      [
+        "file",
+        "src/Common/NotificationListItem/PaymentVehiclesInfo.tsx · NotificationListItem.tsx:391",
+        true
+      ],
+      [
+        "reuse",
+        "loadboard-frontend/src/components/FasterPayLabel.tsx (port or extract — Q2)",
+        true
+      ],
+      [
+        "service",
+        "cube · loadboard read side (faster_payment_enabled already present, SCP-15099)",
+        false
+      ],
+      [
+        "file",
+        "cube/loadboard/loadboard-dtos/.../out/v2/PostingReadDto.java:157-158",
+        true
+      ],
+      [
+        "terms",
+        "platform-backend FasterPaymentConfigurationViewSet (api/api.py:90) — reused, no change",
+        false
+      ],
+      [
+        "relay",
+        "notification-backend — opaque WS relay, no change",
+        false
+      ],
+      [
+        "mobile",
+        "epod-ios / epod-android — consume the REST endpoint; additive field decode-safe, display out of scope",
+        false
+      ]
+    ]
+  },
+  "rollout": {
+    "tone": "warn",
+    "label": "§5 · rollout & sequencing",
+    "text": "**Sequencing (upstream first).**\n1. **cube / models-lib** — confirm or publish the client version whose PostingReadDto carries the faster-pay flag (already in cube via SCP-15099).\n2. **load-recommender** — bump that dependency and add the field (plus the SmartHaul method passthrough, Q1) to the LoadDto and its converter. One converter feeds both the REST list and the WebSocket push, so both surfaces light up together.\n3. **platform-frontend** — bump the entities/globals packages, port the Faster Pay component, add the card blocks, and add the Source=LoadScout Mixpanel property. Depends on step 2 being live.\n4. **QA / automation** — cover eligible, not-eligible, tooltip terms, and the Mixpanel property.\n\n**Risk — Postings resync landmine (Q5).** The syncer resync SQL reads the raw, always-null faster-pay column (a copy of the orders landmine from SCP-15098). A Postings resync nulls the flag fleet-wide, and because load-recommender live-reads that index via cube, the LoadScout badge would vanish across all cards until re-synced from events. The fix belongs to syncer but degrades this surface.\n\n**Compatibility.** The contract change is additive and backward-compatible — both ePOD apps decode leniently — so no coordinated mobile release is required."
+  }
+}
