@@ -1,42 +1,43 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 340" font-family="system-ui,sans-serif" font-size="13">
   <defs>
-    <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--accent)"/></marker>
-    <marker id="ahr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--rem)"/></marker>
+    <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#b45309"/></marker>
+    <marker id="ahr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#b91c1c"/></marker>
   </defs>
+  <rect x="0" y="0" width="960" height="340" fill="#ffffff"/>
 
   <text x="20" y="26" font-weight="700" font-size="15">One backend default flip — five downstream readers unchanged</text>
 
   <!-- source of truth (the only change) -->
-  <rect x="20" y="60" width="210" height="104" rx="10" class="n-box touched"/>
-  <text x="125" y="86" text-anchor="middle" class="n-title">platform-backend · Company</text>
-  <text x="125" y="106" text-anchor="middle" class="n-sub">drivers_enabled</text>
-  <text x="125" y="123" text-anchor="middle" class="n-sub">drivers_enabled_accept</text>
-  <text x="125" y="146" text-anchor="middle" class="store">db_default=True + NULL backfill</text>
-  <text x="230" y="58" text-anchor="end" class="badge chg">default + backfill</text>
+  <rect x="20" y="60" width="210" height="104" rx="10" class="n-box touched" fill="#fbe7d6" stroke="#c2703d" stroke-width="1.5"/>
+  <text x="125" y="86" text-anchor="middle" class="n-title" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif" fill="#16191d" font-size="14" font-weight="600">platform-backend · Company</text>
+  <text x="125" y="106" text-anchor="middle" class="n-sub" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif" fill="#5c646d" font-size="12">drivers_enabled</text>
+  <text x="125" y="123" text-anchor="middle" class="n-sub" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif" fill="#5c646d" font-size="12">drivers_enabled_accept</text>
+  <text x="125" y="146" text-anchor="middle" class="store" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif" fill="#7a828b" font-size="11" font-style="italic">db_default=True + NULL backfill</text>
+  <text x="230" y="58" text-anchor="end" class="badge chg" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif" fill="#b45309" font-size="11" font-weight="600">default + backfill</text>
 
   <!-- enforcement unchanged -->
-  <rect x="300" y="72" width="200" height="80" rx="10" class="n-box"/>
-  <text x="400" y="98" text-anchor="middle" class="n-title">Enforcement (unchanged)</text>
-  <text x="400" y="118" text-anchor="middle" class="n-sub">filters:60 · order_api:4184</text>
-  <text x="400" y="135" text-anchor="middle" class="store">None = forbidden (truthiness)</text>
+  <rect x="300" y="72" width="200" height="80" rx="10" class="n-box" fill="#f5f6f8" stroke="#cbd2d9" stroke-width="1.5"/>
+  <text x="400" y="98" text-anchor="middle" class="n-title" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif" fill="#16191d" font-size="14" font-weight="600">Enforcement (unchanged)</text>
+  <text x="400" y="118" text-anchor="middle" class="n-sub" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif" fill="#5c646d" font-size="12">filters:60 · order_api:4184</text>
+  <text x="400" y="135" text-anchor="middle" class="store" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif" fill="#7a828b" font-size="11" font-style="italic">None = forbidden (truthiness)</text>
 
   <!-- API -->
-  <rect x="560" y="90" width="160" height="44" rx="10" class="n-box"/>
-  <text x="640" y="110" text-anchor="middle" class="n-title">Company API</text>
-  <text x="640" y="126" text-anchor="middle" class="n-sub">must return explicit true</text>
+  <rect x="560" y="90" width="160" height="44" rx="10" class="n-box" fill="#f5f6f8" stroke="#cbd2d9" stroke-width="1.5"/>
+  <text x="640" y="110" text-anchor="middle" class="n-title" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif" fill="#16191d" font-size="14" font-weight="600">Company API</text>
+  <text x="640" y="126" text-anchor="middle" class="n-sub" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif" fill="#5c646d" font-size="12">must return explicit true</text>
 
   <!-- consumers (no code change) -->
-  <rect x="780" y="24" width="170" height="40" rx="8" class="n-box"/>
-  <text x="865" y="49" text-anchor="middle" class="n-sub">platform-frontend toggles</text>
-  <rect x="780" y="76" width="170" height="40" rx="8" class="n-box"/>
-  <text x="865" y="101" text-anchor="middle" class="n-sub">epod-ios menu / accept</text>
-  <rect x="780" y="128" width="170" height="40" rx="8" class="n-box"/>
-  <text x="865" y="153" text-anchor="middle" class="n-sub">epod-android nav / accept</text>
+  <rect x="780" y="24" width="170" height="40" rx="8" class="n-box" fill="#f5f6f8" stroke="#cbd2d9" stroke-width="1.5"/>
+  <text x="865" y="49" text-anchor="middle" class="n-sub" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif" fill="#5c646d" font-size="12">platform-frontend toggles</text>
+  <rect x="780" y="76" width="170" height="40" rx="8" class="n-box" fill="#f5f6f8" stroke="#cbd2d9" stroke-width="1.5"/>
+  <text x="865" y="101" text-anchor="middle" class="n-sub" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif" fill="#5c646d" font-size="12">epod-ios menu / accept</text>
+  <rect x="780" y="128" width="170" height="40" rx="8" class="n-box" fill="#f5f6f8" stroke="#cbd2d9" stroke-width="1.5"/>
+  <text x="865" y="153" text-anchor="middle" class="n-sub" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif" fill="#5c646d" font-size="12">epod-android nav / accept</text>
 
   <!-- syncer dropped -->
-  <rect x="560" y="188" width="160" height="46" rx="10" class="n-box"/>
-  <text x="640" y="209" text-anchor="middle" class="n-sub">syncer &#8594; ES</text>
-  <text x="640" y="226" text-anchor="middle" class="flow-lbl rem">flags not indexed</text>
+  <rect x="560" y="188" width="160" height="46" rx="10" class="n-box" fill="#f5f6f8" stroke="#cbd2d9" stroke-width="1.5"/>
+  <text x="640" y="209" text-anchor="middle" class="n-sub" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif" fill="#5c646d" font-size="12">syncer &#8594; ES</text>
+  <text x="640" y="226" text-anchor="middle" class="flow-lbl rem" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif" fill="#b91c1c" font-size="12">flags not indexed</text>
 
   <!-- edges -->
   <line x1="230" y1="112" x2="296" y2="112" class="flow hot" marker-end="url(#ah)"/>
@@ -46,6 +47,6 @@
   <line x1="720" y1="118" x2="776" y2="146" class="flow hot" marker-end="url(#ah)"/>
   <line x1="150" y1="164" x2="590" y2="188" class="flow brkline" stroke-dasharray="5 4" marker-end="url(#ahr)"/>
 
-  <text x="20" y="278" class="n-sub">Only the leftmost box changes. The "API returns explicit true" edge is the one cross-surface contract:</text>
-  <text x="20" y="296" class="n-sub">the FE coerces null &#8594; OFF (!!company.field), so any leftover NULL silently disables the toggle.</text>
+  <text x="20" y="278" class="n-sub" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif" fill="#5c646d" font-size="12">Only the leftmost box changes. The "API returns explicit true" edge is the one cross-surface contract:</text>
+  <text x="20" y="296" class="n-sub" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif" fill="#5c646d" font-size="12">the FE coerces null &#8594; OFF (!!company.field), so any leftover NULL silently disables the toggle.</text>
 </svg>

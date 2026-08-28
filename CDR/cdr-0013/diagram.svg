@@ -1,13 +1,14 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 180" role="img" aria-label="The driver app posts location to location-history-backend, a Quarkus service, which publishes the location-log event carrying a new heading field; syncer's LHLogIndexListener consumes it, and other subscribers tolerate the added field.">
-  <defs><marker id="ar13" markerWidth="10" markerHeight="10" refX="7.5" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="var(--accent)"/></marker></defs>
-  <rect x="10" y="54" width="150" height="72" rx="11" class="n-box"/>
-  <text x="24" y="82" class="n-title">driver-app</text><text x="24" y="102" class="n-sub">sends heading</text>
-  <path d="M160 90 H236" class="flow hot" marker-end="url(#ar13)"/><text x="198" y="82" class="flow-lbl hot" text-anchor="middle">POST</text>
-  <rect x="238" y="54" width="180" height="72" rx="11" class="n-box touched"/>
-  <text x="252" y="82" class="n-title">location-history</text><text x="252" y="102" class="n-sub">Quarkus 3.27.5 · publisher</text>
-  <text x="238" y="46" class="badge add">+ DTO field</text>
-  <path d="M418 90 H514" class="flow hot" marker-end="url(#ar13)"/><text x="466" y="82" class="flow-lbl hot" text-anchor="middle">publish</text>
-  <rect x="516" y="54" width="194" height="72" rx="11" class="n-box touched"/>
-  <text x="530" y="82" class="n-title">lh-load-location-log</text><text x="530" y="102" class="store">camelCase · +heading</text>
-  <text x="516" y="46" class="badge add">+ heading</text>
+  <defs><marker id="ar13" markerWidth="10" markerHeight="10" refX="7.5" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#b45309"/></marker></defs>
+  <rect x="0" y="0" width="720" height="180" fill="#ffffff"/>
+  <rect x="10" y="54" width="150" height="72" rx="11" class="n-box" fill="#f5f6f8" stroke="#cbd2d9" stroke-width="1.5"/>
+  <text x="24" y="82" class="n-title" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif" fill="#16191d" font-size="14" font-weight="600">driver-app</text><text x="24" y="102" class="n-sub" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif" fill="#5c646d" font-size="12">sends heading</text>
+  <path d="M160 90 H236" class="flow hot" marker-end="url(#ar13)" fill="none" stroke="#b45309" stroke-width="1.8"/><text x="198" y="82" class="flow-lbl hot" text-anchor="middle" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif" fill="#b45309" font-size="12">POST</text>
+  <rect x="238" y="54" width="180" height="72" rx="11" class="n-box touched" fill="#fbe7d6" stroke="#c2703d" stroke-width="1.5"/>
+  <text x="252" y="82" class="n-title" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif" fill="#16191d" font-size="14" font-weight="600">location-history</text><text x="252" y="102" class="n-sub" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif" fill="#5c646d" font-size="12">Quarkus 3.27.5 · publisher</text>
+  <text x="238" y="46" class="badge add" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif" fill="#2f7d55" font-size="11" font-weight="600">+ DTO field</text>
+  <path d="M418 90 H514" class="flow hot" marker-end="url(#ar13)" fill="none" stroke="#b45309" stroke-width="1.8"/><text x="466" y="82" class="flow-lbl hot" text-anchor="middle" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif" fill="#b45309" font-size="12">publish</text>
+  <rect x="516" y="54" width="194" height="72" rx="11" class="n-box touched" fill="#fbe7d6" stroke="#c2703d" stroke-width="1.5"/>
+  <text x="530" y="82" class="n-title" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif" fill="#16191d" font-size="14" font-weight="600">lh-load-location-log</text><text x="530" y="102" class="store" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif" fill="#7a828b" font-size="11" font-style="italic">camelCase · +heading</text>
+  <text x="516" y="46" class="badge add" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif" fill="#2f7d55" font-size="11" font-weight="600">+ heading</text>
 </svg>

@@ -1,46 +1,47 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 980 360" font-family="system-ui,-apple-system,sans-serif" font-size="13">
   <defs>
-    <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--accent)"/></marker>
-    <marker id="ahr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--rem)"/></marker>
+    <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#b45309"/></marker>
+    <marker id="ahr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#b91c1c"/></marker>
   </defs>
+  <rect x="0" y="0" width="980" height="360" fill="#ffffff"/>
 
   <text x="20" y="28" font-weight="700" font-size="15">SCP-15134 — LoadScout Faster Pay: the BE gap vs the loadboard twin</text>
 
   <!-- LoadBoard lane (reference, FE-only) -->
-  <text x="20" y="74" font-weight="600" fill="var(--muted)">LoadBoard CTMS (SCP-14956) — FE-only, already shipped</text>
-  <rect x="20" y="86" width="168" height="54" rx="9" class="n-box"/>
-  <text x="104" y="110" text-anchor="middle" class="n-title">loadboard-frontend</text>
-  <text x="104" y="128" text-anchor="middle" class="n-sub">PostingListItem</text>
-  <rect x="360" y="86" width="168" height="54" rx="9" class="n-box"/>
-  <text x="444" y="110" text-anchor="middle" class="n-title">cube</text>
-  <text x="444" y="128" text-anchor="middle" class="n-sub store">PostingReadDto · flag ✓</text>
+  <text x="20" y="74" font-weight="600" fill="#8a929b">LoadBoard CTMS (SCP-14956) — FE-only, already shipped</text>
+  <rect x="20" y="86" width="168" height="54" rx="9" class="n-box" fill="#f5f6f8" stroke="#cbd2d9" stroke-width="1.5"/>
+  <text x="104" y="110" text-anchor="middle" class="n-title" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif" fill="#16191d" font-size="14" font-weight="600">loadboard-frontend</text>
+  <text x="104" y="128" text-anchor="middle" class="n-sub" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif" fill="#5c646d" font-size="12">PostingListItem</text>
+  <rect x="360" y="86" width="168" height="54" rx="9" class="n-box" fill="#f5f6f8" stroke="#cbd2d9" stroke-width="1.5"/>
+  <text x="444" y="110" text-anchor="middle" class="n-title" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif" fill="#16191d" font-size="14" font-weight="600">cube</text>
+  <text x="444" y="128" text-anchor="middle" class="n-sub store" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif" fill="#5c646d" font-size="12">PostingReadDto · flag ✓</text>
   <line x1="188" y1="113" x2="356" y2="113" class="flow hot" marker-end="url(#ah)"/>
-  <text x="272" y="105" text-anchor="middle" class="flow-lbl hot">reads cube directly</text>
+  <text x="272" y="105" text-anchor="middle" class="flow-lbl hot" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif" fill="#b45309" font-size="12">reads cube directly</text>
 
   <!-- LoadScout lane (this story) -->
-  <text x="20" y="190" font-weight="600" fill="var(--muted)">LoadScout CTMS (SCP-15134) — this story · FE + BE</text>
-  <rect x="20" y="202" width="168" height="54" rx="9" class="n-box touched"/>
-  <text x="104" y="226" text-anchor="middle" class="n-title">platform-frontend</text>
-  <text x="104" y="244" text-anchor="middle" class="n-sub">NotificationListItem</text>
-  <rect x="270" y="202" width="176" height="54" rx="9" class="n-box touched"/>
-  <text x="358" y="222" text-anchor="middle" class="n-title">load-recommender</text>
-  <text x="358" y="240" text-anchor="middle" class="n-sub store">LoadDto · flag ✗</text>
-  <rect x="528" y="202" width="168" height="54" rx="9" class="n-box"/>
-  <text x="612" y="222" text-anchor="middle" class="n-title">cube / models-lib</text>
-  <text x="612" y="240" text-anchor="middle" class="n-sub store">read model (bump)</text>
-  <rect x="778" y="202" width="182" height="54" rx="9" class="n-box"/>
-  <text x="869" y="222" text-anchor="middle" class="n-title">platform-backend</text>
-  <text x="869" y="240" text-anchor="middle" class="n-sub store">terms config (reuse)</text>
+  <text x="20" y="190" font-weight="600" fill="#8a929b">LoadScout CTMS (SCP-15134) — this story · FE + BE</text>
+  <rect x="20" y="202" width="168" height="54" rx="9" class="n-box touched" fill="#fbe7d6" stroke="#c2703d" stroke-width="1.5"/>
+  <text x="104" y="226" text-anchor="middle" class="n-title" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif" fill="#16191d" font-size="14" font-weight="600">platform-frontend</text>
+  <text x="104" y="244" text-anchor="middle" class="n-sub" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif" fill="#5c646d" font-size="12">NotificationListItem</text>
+  <rect x="270" y="202" width="176" height="54" rx="9" class="n-box touched" fill="#fbe7d6" stroke="#c2703d" stroke-width="1.5"/>
+  <text x="358" y="222" text-anchor="middle" class="n-title" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif" fill="#16191d" font-size="14" font-weight="600">load-recommender</text>
+  <text x="358" y="240" text-anchor="middle" class="n-sub store" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif" fill="#5c646d" font-size="12">LoadDto · flag ✗</text>
+  <rect x="528" y="202" width="168" height="54" rx="9" class="n-box" fill="#f5f6f8" stroke="#cbd2d9" stroke-width="1.5"/>
+  <text x="612" y="222" text-anchor="middle" class="n-title" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif" fill="#16191d" font-size="14" font-weight="600">cube / models-lib</text>
+  <text x="612" y="240" text-anchor="middle" class="n-sub store" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif" fill="#5c646d" font-size="12">read model (bump)</text>
+  <rect x="778" y="202" width="182" height="54" rx="9" class="n-box" fill="#f5f6f8" stroke="#cbd2d9" stroke-width="1.5"/>
+  <text x="869" y="222" text-anchor="middle" class="n-title" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif" fill="#16191d" font-size="14" font-weight="600">platform-backend</text>
+  <text x="869" y="240" text-anchor="middle" class="n-sub store" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif" fill="#5c646d" font-size="12">terms config (reuse)</text>
 
   <line x1="188" y1="229" x2="266" y2="229" class="flow hot" marker-end="url(#ah)"/>
-  <text x="212" y="196" text-anchor="middle" class="flow-lbl hot">GET /recommendations</text>
+  <text x="212" y="196" text-anchor="middle" class="flow-lbl hot" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif" fill="#b45309" font-size="12">GET /recommendations</text>
   <line x1="446" y1="229" x2="524" y2="229" class="flow brkline" marker-end="url(#ahr)"/>
-  <text x="486" y="196" text-anchor="middle" class="flow-lbl rem">flag missing</text>
+  <text x="486" y="196" text-anchor="middle" class="flow-lbl rem" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif" fill="#b91c1c" font-size="12">flag missing</text>
 
-  <rect x="270" y="150" width="176" height="20" rx="6" class="badge add"/>
-  <text x="358" y="164" text-anchor="middle" class="flow-lbl hot">add faster_payment_enabled</text>
+  <rect x="270" y="150" width="176" height="20" rx="6" class="badge add" fill="#e2efe8" stroke="#2f7d55" stroke-width="1.5"/>
+  <text x="358" y="164" text-anchor="middle" class="flow-lbl hot" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif" fill="#b45309" font-size="12">add faster_payment_enabled</text>
 
   <!-- terms fetch (separate, faint) -->
-  <path d="M104 256 C104 318 869 318 869 258" fill="none" class="flow faint" marker-end="url(#ah)"/>
-  <text x="486" y="336" text-anchor="middle" class="flow-lbl">tooltip terms fetched separately per shipper (fetchFasterPaymentConfigurationByShipperIds)</text>
+  <path d="M104 256 C104 318 869 318 869 258" fill="none" class="flow faint" marker-end="url(#ah)" stroke="#c2c8ce" stroke-width="1.6"/>
+  <text x="486" y="336" text-anchor="middle" class="flow-lbl" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif" fill="#374151" font-size="12">tooltip terms fetched separately per shipper (fetchFasterPaymentConfigurationByShipperIds)</text>
 </svg>

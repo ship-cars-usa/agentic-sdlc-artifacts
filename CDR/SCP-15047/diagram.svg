@@ -1,26 +1,27 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 250" role="img" aria-label="The bulk worker fetches a Load (instance A) and runs Revision.accept, which mutates a different instance (B) and correctly saves to Postgres; but the worker serializes its stale instance A into both the HTTP response and event.new_value, and ctms-frontend merges that stale response into Redux after the socket refetch already corrected the grid.">
   <defs>
-    <marker id="s47" markerWidth="10" markerHeight="10" refX="7.5" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="var(--accent)"/></marker>
-    <marker id="s47r" markerWidth="10" markerHeight="10" refX="7.5" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="var(--rem)"/></marker>
+    <marker id="s47" markerWidth="10" markerHeight="10" refX="7.5" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#b45309"/></marker>
+    <marker id="s47r" markerWidth="10" markerHeight="10" refX="7.5" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#b91c1c"/></marker>
   </defs>
-  <rect x="10" y="20" width="180" height="70" rx="11" class="n-box touched"/>
-  <text x="24" y="46" class="n-title">bulk worker</text><text x="24" y="64" class="n-sub">process_bulk_action</text>
-  <text x="24" y="80" class="store">instance A · stale in memory</text>
-  <text x="10" y="12" class="badge chg">refresh_from_db()</text>
-  <path d="M190 55 H286" class="flow hot" marker-end="url(#s47)"/><text x="238" y="47" class="flow-lbl hot" text-anchor="middle">action_func</text>
-  <rect x="288" y="20" width="180" height="70" rx="11" class="n-box"/>
-  <text x="302" y="46" class="n-title">Revision.accept</text><text x="302" y="64" class="n-sub">mutates instance B</text>
-  <text x="302" y="80" class="n-sub">(revision.load)</text>
-  <path d="M468 55 H564" class="flow hot" marker-end="url(#s47)"/><text x="516" y="47" class="flow-lbl hot" text-anchor="middle">save</text>
-  <rect x="566" y="20" width="184" height="70" rx="11" class="n-box"/>
-  <text x="580" y="46" class="n-title">PG · loads</text><text x="580" y="64" class="store">correct (row updated)</text>
-  <path d="M100 90 V150" class="flow brkline" marker-end="url(#s47r)"/><text x="110" y="128" class="flow-lbl rem">serializes stale instance A</text>
-  <rect x="10" y="150" width="270" height="72" rx="11" class="n-box touched"/>
-  <text x="24" y="176" class="n-title">HTTP response + event.new_value</text><text x="24" y="194" class="n-sub">stale snapshot (pre-accept)</text>
-  <text x="24" y="210" class="store">pre-mutation active_revision_id</text>
-  <path d="M280 186 H364" class="flow hot" marker-end="url(#s47)"/><text x="322" y="178" class="flow-lbl hot" text-anchor="middle">merge</text>
-  <rect x="366" y="150" width="230" height="72" rx="11" class="n-box touched"/>
-  <text x="380" y="176" class="n-title">ctms-frontend · Redux</text><text x="380" y="194" class="n-sub">merged after socket refetch</text>
-  <text x="380" y="210" class="store">"Revision" caption sticks</text>
-  <text x="610" y="190" class="n-sub">datastores fine —</text><text x="610" y="205" class="n-sub">stale only in browser</text>
+  <rect x="0" y="0" width="760" height="250" fill="#ffffff"/>
+  <rect x="10" y="20" width="180" height="70" rx="11" class="n-box touched" fill="#fbe7d6" stroke="#c2703d" stroke-width="1.5"/>
+  <text x="24" y="46" class="n-title" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif" fill="#16191d" font-size="14" font-weight="600">bulk worker</text><text x="24" y="64" class="n-sub" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif" fill="#5c646d" font-size="12">process_bulk_action</text>
+  <text x="24" y="80" class="store" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif" fill="#7a828b" font-size="11" font-style="italic">instance A · stale in memory</text>
+  <text x="10" y="12" class="badge chg" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif" fill="#b45309" font-size="11" font-weight="600">refresh_from_db()</text>
+  <path d="M190 55 H286" class="flow hot" marker-end="url(#s47)" fill="none" stroke="#b45309" stroke-width="1.8"/><text x="238" y="47" class="flow-lbl hot" text-anchor="middle" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif" fill="#b45309" font-size="12">action_func</text>
+  <rect x="288" y="20" width="180" height="70" rx="11" class="n-box" fill="#f5f6f8" stroke="#cbd2d9" stroke-width="1.5"/>
+  <text x="302" y="46" class="n-title" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif" fill="#16191d" font-size="14" font-weight="600">Revision.accept</text><text x="302" y="64" class="n-sub" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif" fill="#5c646d" font-size="12">mutates instance B</text>
+  <text x="302" y="80" class="n-sub" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif" fill="#5c646d" font-size="12">(revision.load)</text>
+  <path d="M468 55 H564" class="flow hot" marker-end="url(#s47)" fill="none" stroke="#b45309" stroke-width="1.8"/><text x="516" y="47" class="flow-lbl hot" text-anchor="middle" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif" fill="#b45309" font-size="12">save</text>
+  <rect x="566" y="20" width="184" height="70" rx="11" class="n-box" fill="#f5f6f8" stroke="#cbd2d9" stroke-width="1.5"/>
+  <text x="580" y="46" class="n-title" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif" fill="#16191d" font-size="14" font-weight="600">PG · loads</text><text x="580" y="64" class="store" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif" fill="#7a828b" font-size="11" font-style="italic">correct (row updated)</text>
+  <path d="M100 90 V150" class="flow brkline" marker-end="url(#s47r)" fill="none" stroke="#8a929b" stroke-width="1.6" stroke-dasharray="5 3"/><text x="110" y="128" class="flow-lbl rem" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif" fill="#b91c1c" font-size="12">serializes stale instance A</text>
+  <rect x="10" y="150" width="270" height="72" rx="11" class="n-box touched" fill="#fbe7d6" stroke="#c2703d" stroke-width="1.5"/>
+  <text x="24" y="176" class="n-title" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif" fill="#16191d" font-size="14" font-weight="600">HTTP response + event.new_value</text><text x="24" y="194" class="n-sub" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif" fill="#5c646d" font-size="12">stale snapshot (pre-accept)</text>
+  <text x="24" y="210" class="store" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif" fill="#7a828b" font-size="11" font-style="italic">pre-mutation active_revision_id</text>
+  <path d="M280 186 H364" class="flow hot" marker-end="url(#s47)" fill="none" stroke="#b45309" stroke-width="1.8"/><text x="322" y="178" class="flow-lbl hot" text-anchor="middle" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif" fill="#b45309" font-size="12">merge</text>
+  <rect x="366" y="150" width="230" height="72" rx="11" class="n-box touched" fill="#fbe7d6" stroke="#c2703d" stroke-width="1.5"/>
+  <text x="380" y="176" class="n-title" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif" fill="#16191d" font-size="14" font-weight="600">ctms-frontend · Redux</text><text x="380" y="194" class="n-sub" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif" fill="#5c646d" font-size="12">merged after socket refetch</text>
+  <text x="380" y="210" class="store" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif" fill="#7a828b" font-size="11" font-style="italic">"Revision" caption sticks</text>
+  <text x="610" y="190" class="n-sub" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif" fill="#5c646d" font-size="12">datastores fine —</text><text x="610" y="205" class="n-sub" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif" fill="#5c646d" font-size="12">stale only in browser</text>
 </svg>

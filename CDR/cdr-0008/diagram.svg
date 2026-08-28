@@ -1,13 +1,14 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 180" role="img" aria-label="An API client posts to payment-backend, a Quarkus JAX-RS service, which upserts the transactions table; a partial unique index on (from_company_id, idempotency_key) makes a retried request a no-op.">
-  <defs><marker id="ar8" markerWidth="10" markerHeight="10" refX="7.5" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="var(--accent)"/></marker></defs>
-  <rect x="10" y="54" width="160" height="72" rx="11" class="n-box"/>
-  <text x="24" y="82" class="n-title">API client</text><text x="24" y="102" class="n-sub">retries on timeout</text>
-  <path d="M170 90 H262" class="flow hot" marker-end="url(#ar8)"/><text x="216" y="82" class="flow-lbl hot" text-anchor="middle">create</text>
-  <rect x="264" y="54" width="174" height="72" rx="11" class="n-box touched"/>
-  <text x="278" y="82" class="n-title">payment-backend</text><text x="278" y="102" class="n-sub">Quarkus 3.27.5 · JAX-RS</text>
-  <text x="278" y="46" class="badge chg">+ DTO field</text>
-  <path d="M438 90 H534" class="flow hot" marker-end="url(#ar8)"/><text x="486" y="82" class="flow-lbl hot" text-anchor="middle">upsert</text>
-  <rect x="536" y="54" width="174" height="72" rx="11" class="n-box touched"/>
-  <text x="550" y="82" class="n-title">PG · transactions</text><text x="550" y="102" class="store">DB payment</text>
-  <text x="536" y="46" class="badge add">+ column · unique idx</text>
+  <defs><marker id="ar8" markerWidth="10" markerHeight="10" refX="7.5" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#b45309"/></marker></defs>
+  <rect x="0" y="0" width="720" height="180" fill="#ffffff"/>
+  <rect x="10" y="54" width="160" height="72" rx="11" class="n-box" fill="#f5f6f8" stroke="#cbd2d9" stroke-width="1.5"/>
+  <text x="24" y="82" class="n-title" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif" fill="#16191d" font-size="14" font-weight="600">API client</text><text x="24" y="102" class="n-sub" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif" fill="#5c646d" font-size="12">retries on timeout</text>
+  <path d="M170 90 H262" class="flow hot" marker-end="url(#ar8)" fill="none" stroke="#b45309" stroke-width="1.8"/><text x="216" y="82" class="flow-lbl hot" text-anchor="middle" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif" fill="#b45309" font-size="12">create</text>
+  <rect x="264" y="54" width="174" height="72" rx="11" class="n-box touched" fill="#fbe7d6" stroke="#c2703d" stroke-width="1.5"/>
+  <text x="278" y="82" class="n-title" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif" fill="#16191d" font-size="14" font-weight="600">payment-backend</text><text x="278" y="102" class="n-sub" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif" fill="#5c646d" font-size="12">Quarkus 3.27.5 · JAX-RS</text>
+  <text x="278" y="46" class="badge chg" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif" fill="#b45309" font-size="11" font-weight="600">+ DTO field</text>
+  <path d="M438 90 H534" class="flow hot" marker-end="url(#ar8)" fill="none" stroke="#b45309" stroke-width="1.8"/><text x="486" y="82" class="flow-lbl hot" text-anchor="middle" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif" fill="#b45309" font-size="12">upsert</text>
+  <rect x="536" y="54" width="174" height="72" rx="11" class="n-box touched" fill="#fbe7d6" stroke="#c2703d" stroke-width="1.5"/>
+  <text x="550" y="82" class="n-title" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif" fill="#16191d" font-size="14" font-weight="600">PG · transactions</text><text x="550" y="102" class="store" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif" fill="#7a828b" font-size="11" font-style="italic">DB payment</text>
+  <text x="536" y="46" class="badge add" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif" fill="#2f7d55" font-size="11" font-weight="600">+ column · unique idx</text>
 </svg>
