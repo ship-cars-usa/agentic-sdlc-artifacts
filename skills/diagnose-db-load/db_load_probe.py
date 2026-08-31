@@ -65,12 +65,28 @@ INS = "cloudsql.googleapis.com/database/postgresql/insights"   # resource: cloud
 DB  = "cloudsql.googleapis.com/database"                       # resource: cloudsql_database
 
 
+def gcloud_out(cmd, **kw):
+    """Run a gcloud command and return stdout. On expired auth or any gcloud
+    failure, print a friendly reauth hint and exit(1) instead of dumping a raw
+    Python traceback (CalledProcessError)."""
+    try:
+        return subprocess.check_output(cmd, **kw)
+    except FileNotFoundError:
+        print("ERROR: `gcloud` not found on PATH. Install the Google Cloud CLI, then run "
+              "`gcloud auth login`.", file=sys.stderr)
+        sys.exit(1)
+    except subprocess.CalledProcessError:
+        print("ERROR: gcloud command failed (auth may have expired). Run `gcloud auth login` "
+              "and confirm access to the project, then retry.", file=sys.stderr)
+        sys.exit(1)
+
+
 def token():
-    return subprocess.check_output(["gcloud", "auth", "print-access-token"]).decode().strip()
+    return gcloud_out(["gcloud", "auth", "print-access-token"]).decode().strip()
 
 
 def default_project():
-    return subprocess.check_output(
+    return gcloud_out(
         ["gcloud", "config", "get-value", "project"], stderr=subprocess.DEVNULL).decode().strip()
 
 
@@ -172,7 +188,7 @@ def window_seconds(s, e):
 def cmd_instances(args):
     # gcloud is the source of truth for the inventory; vCPU is derived from the tier
     # because the CPU-share arithmetic downstream is meaningless without it.
-    out = subprocess.check_output(
+    out = gcloud_out(
         ["gcloud", "sql", "instances", "list", "--project", args.project,
          "--format=value(name,databaseVersion,region,settings.tier,settings.dataDiskSizeGb)"]
     ).decode().splitlines()
