@@ -1,3 +1,11 @@
 .DS_Store
 __pycache__/
 *.pyc
+
+# Secrets — never commit the Jira read token or npm creds
+grooming/jira-read.txt
+*jira-read.txt
+.npmrc
+
+# Local skill output (regenerated on demand)
+tdd/

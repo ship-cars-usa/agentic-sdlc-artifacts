@@ -148,10 +148,51 @@ echo "==> Code repos → $WORKSPACE/$CODE_DIR   ($JOBS parallel workers)"
 echo "$code_list" | grep . | \
     xargs -P "$JOBS" -I{} bash -c 'clone_or_pull "$@"' _ {} "$ORG" "$CLONE_PROTO" "$WORKSPACE/$CODE_DIR"
 
-# ---- Ensure artifact output folders exist --------------------------------------
-if [[ -d "$WORKSPACE/agentic-sdlc-artifacts/.git" ]]; then
-    mkdir -p "$WORKSPACE/agentic-sdlc-artifacts/CDR" \
-             "$WORKSPACE/agentic-sdlc-artifacts/jira-breakdowns"
+# ---- Ensure artifact output + support folders exist ----------------------------
+REPO_DIR="$WORKSPACE/agentic-sdlc-artifacts"
+if [[ -d "$REPO_DIR/.git" ]]; then
+    mkdir -p "$REPO_DIR/CDR" \
+             "$REPO_DIR/jira-breakdowns" \
+             "$REPO_DIR/tdd" \
+             "$REPO_DIR/grooming"
+fi
+
+# ---- Jira token reminder -------------------------------------------------------
+# The vendored grooming client + the skills' readers discover the read-only Jira
+# token first-match-wins: $JIRA_READ_TOKEN, else <REPO>/grooming/jira-read.txt.
+# The token is NEVER committed (see .gitignore), so it must be provided per machine.
+if [[ -d "$REPO_DIR/.git" ]]; then
+    if [[ -z "${JIRA_READ_TOKEN:-}" && ! -f "$REPO_DIR/grooming/jira-read.txt" ]]; then
+        echo "==> NOTE: no Jira token found. The grooming/test-case skills need a read-only"
+        echo "          Jira token — either export JIRA_READ_TOKEN=... or write it to:"
+        echo "            $REPO_DIR/grooming/jira-read.txt"
+    fi
+fi
+
+# ---- Discovery: COPY vendored skills into <WORKSPACE>/.claude/skills/ -----------
+# Claude Code discovers skills under .claude/skills/. We copy (not symlink) each
+# vendored skill so it works OS-agnostically (Windows/Git Bash restrict symlinks).
+# This step doubles as the UPDATE mechanism: on every run we refresh (overwrite)
+# the copies of the skills WE vendor, matched by their known names — so
+# `git pull && ./install-sdlc.sh` updates them. A .claude/skills/<name> that is not
+# one of ours is never touched. Idempotent.
+if [[ -d "$REPO_DIR/skills" ]]; then
+    SKILLS_DEST="$WORKSPACE/.claude/skills"
+    mkdir -p "$SKILLS_DEST"
+    echo "==> Copying skills into $SKILLS_DEST (re-run to update)"
+    for skill_path in "$REPO_DIR/skills"/*/; do
+        [[ -d "$skill_path" ]] || continue
+        name="$(basename "$skill_path")"
+        src="${skill_path%/}"
+        dest="$SKILLS_DEST/$name"
+        # Refresh a clean copy: remove our previous copy (or a stale symlink from an
+        # older install), then copy fresh. Only ever removes the destination that
+        # bears one of OUR vendored skill names, so a foreign skill of a different
+        # name is never affected.
+        rm -rf "$dest"
+        cp -R "$src" "$dest"
+        echo "[ok]   copy  $name"
+    done
 fi
 
 # ---- Done ----------------------------------------------------------------------
@@ -159,7 +200,9 @@ cat <<EOF
 
 ==> Done. Workspace laid out at: $WORKSPACE
       $CODE_DIR/                 code repos
-      agentic-sdlc-artifacts/   CDR/ + jira-breakdowns/ outputs
+      agentic-sdlc-artifacts/   skills/ + grooming/ + codebase-map/ + CDR/ + jira-breakdowns/ + tdd/
+      .claude/skills/           copies of the vendored skills (re-run install-sdlc.sh to update them)
 
-(Skills, grooming, and codebase-map are not set up yet — coming later.)
+Next: provide a Jira read token ($JIRA_READ_TOKEN or agentic-sdlc-artifacts/grooming/jira-read.txt),
+connect the Figma MCP, and ensure gcloud + git are authenticated. Then the skills are ready.
 EOF

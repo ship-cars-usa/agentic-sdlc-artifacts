@@ -1,0 +1,193 @@
+<title>{{TITLE}}</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root{
+    --ground:#F6F7F9; --surface:#FFFFFF; --surface-2:#FBFCFD; --panel:#F1F3F6;
+    --ink:#161A20; --muted:#5B6572; --faint:#8A94A2; --border:#E3E7ED; --border-strong:#CFD5DE;
+    --accent:#0E7C74; --accent-soft:#DCEFEC;
+    --change:#B24127; --change-soft:#F6E4DE;   /* requirement change / conflict */
+    --open:#9A6B08; --open-soft:#F6ECD5;        /* open question */
+    --new:#3A5BA0; --new-soft:#E1E8F5;          /* net-new */
+    --ok:#2F7D46;
+    --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  :root{--surface-2:#FBFCFD;}
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --ground:#0E1217; --surface:#161B22; --surface-2:#1B212A; --panel:#1A2029;
+      --ink:#E7ECF3; --muted:#98A3B2; --faint:#6C7684; --border:#242C36; --border-strong:#333D49;
+      --accent:#35B4A9; --accent-soft:#123230;
+      --change:#E37152; --change-soft:#3A211A;
+      --open:#E0A73B; --open-soft:#352A14;
+      --new:#7C9BE0; --new-soft:#1B2436;
+      --ok:#5BB878;
+    }
+  }
+  :root[data-theme="dark"]{
+    --ground:#0E1217; --surface:#161B22; --surface-2:#1B212A; --panel:#1A2029;
+    --ink:#E7ECF3; --muted:#98A3B2; --faint:#6C7684; --border:#242C36; --border-strong:#333D49;
+    --accent:#35B4A9; --accent-soft:#123230;
+    --change:#E37152; --change-soft:#3A211A;
+    --open:#E0A73B; --open-soft:#352A14;
+    --new:#7C9BE0; --new-soft:#1B2436;
+    --ok:#5BB878;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--sans);
+    font-size:16px;line-height:1.55;-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:1040px;margin:0 auto;padding:48px 24px 96px;}
+  h1,h2,h3{text-wrap:balance;line-height:1.2;}
+  h1{font-size:31px;letter-spacing:-0.02em;margin:0 0 6px;font-weight:680;}
+  h2{font-size:21px;letter-spacing:-0.01em;margin:52px 0 4px;font-weight:660;padding-bottom:10px;border-bottom:1px solid var(--border);}
+  h3{font-size:16px;margin:0;font-weight:640;}
+  a{color:var(--accent);text-decoration:none;}
+  a:hover{text-decoration:underline;}
+  a:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:2px;}
+  .lede{color:var(--muted);font-size:16px;max-width:68ch;margin:0 0 4px;}
+  .eyebrow{font-family:var(--mono);font-size:11.5px;letter-spacing:0.12em;text-transform:uppercase;color:var(--accent);margin:0 0 14px;font-weight:600;}
+  .meta{font-family:var(--mono);font-size:12px;color:var(--faint);margin-top:14px;}
+  .meta span{color:var(--muted);}
+
+  /* pills */
+  .pill{display:inline-flex;align-items:center;gap:5px;font-family:var(--mono);font-size:10.5px;font-weight:600;
+    letter-spacing:0.06em;text-transform:uppercase;padding:2px 8px;border-radius:999px;border:1px solid transparent;white-space:nowrap;}
+  .pill.change{background:var(--change-soft);color:var(--change);}
+  .pill.open{background:var(--open-soft);color:var(--open);}
+  .pill.new{background:var(--new-soft);color:var(--new);}
+  .pill.key{background:var(--panel);color:var(--muted);border-color:var(--border);}
+  .dot{width:7px;height:7px;border-radius:2px;display:inline-block;}
+  .dot.change{background:var(--change);}
+  .dot.open{background:var(--open);}
+  .dot.new{background:var(--new);}
+
+  /* legend */
+  .legend{display:flex;flex-wrap:wrap;gap:18px;padding:14px 18px;background:var(--surface);border:1px solid var(--border);
+    border-radius:8px;margin:22px 0 8px;font-size:13.5px;}
+  .legend div{display:flex;align-items:center;gap:8px;color:var(--muted);}
+  .legend b{color:var(--ink);font-weight:600;}
+
+  /* summary table */
+  .tablewrap{overflow-x:auto;border:1px solid var(--border);border-radius:8px;margin:18px 0;background:var(--surface);}
+  table{border-collapse:collapse;width:100%;font-size:13.5px;}
+  th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--border);vertical-align:top;}
+  th{font-family:var(--mono);font-size:10.5px;letter-spacing:0.06em;text-transform:uppercase;color:var(--faint);font-weight:600;background:var(--panel);}
+  tr:last-child td{border-bottom:none;}
+  td.k{font-family:var(--mono);font-size:12.5px;white-space:nowrap;font-variant-numeric:tabular-nums;}
+  .count{font-family:var(--mono);font-variant-numeric:tabular-nums;}
+
+  /* finding + story cards */
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:9px;margin:18px 0;overflow:hidden;}
+  .card-hd{display:flex;align-items:flex-start;gap:12px;justify-content:space-between;padding:16px 20px 12px;}
+  .card-hd .t{display:flex;flex-direction:column;gap:6px;}
+  .card-hd .tags{display:flex;gap:7px;flex-wrap:wrap;align-items:center;}
+  .card-bd{padding:0 20px 18px;}
+  .affects{font-size:12.5px;color:var(--muted);font-family:var(--mono);}
+  .affects a{font-weight:600;}
+
+  .block{margin:14px 0 0;}
+  .lbl{font-family:var(--mono);font-size:10.5px;letter-spacing:0.08em;text-transform:uppercase;color:var(--faint);font-weight:600;margin-bottom:6px;display:flex;align-items:center;gap:7px;}
+  blockquote{margin:0;padding:10px 14px;border-left:3px solid var(--border-strong);background:var(--surface-2);
+    color:var(--muted);font-size:14px;border-radius:0 6px 6px 0;}
+  blockquote.src{border-left-color:var(--accent);}
+  .transcript{padding:10px 14px;background:var(--panel);border-radius:6px;font-size:13.5px;color:var(--ink);}
+  .transcript .ts{font-family:var(--mono);font-size:11px;color:var(--accent);margin-right:6px;}
+  .transcript em{color:var(--muted);font-style:normal;}
+  .change-txt{padding:10px 14px;border-left:3px solid var(--change);background:var(--change-soft);border-radius:0 6px 6px 0;font-size:14px;}
+  :root[data-theme="dark"] .change-txt, :root:not([data-theme="light"]) .change-txt{color:var(--ink);}
+
+  .jira{position:relative;margin-top:8px;}
+  .jira pre{margin:0;padding:14px 16px;background:#0f1420;color:#d7deea;border:1px solid var(--border-strong);
+    border-radius:7px;font-family:var(--mono);font-size:12.5px;line-height:1.5;overflow-x:auto;white-space:pre-wrap;}
+  :root[data-theme="light"] .jira pre{background:#12161f;color:#dbe2ee;}
+  @media (prefers-color-scheme: light){:root:not([data-theme="dark"]) .jira pre{background:#12161f;color:#dbe2ee;}}
+  .jira .cap{font-family:var(--mono);font-size:10.5px;color:var(--faint);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:6px;padding-right:74px;}
+  .jira pre[contenteditable]{caret-color:#fff;transition:box-shadow .15s,border-color .15s;}
+  .jira pre[contenteditable]:hover{border-color:var(--border-strong);}
+  .jira pre[contenteditable]:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft);}
+  .copy-btn{position:absolute;top:0;right:0;font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:0.07em;
+    text-transform:uppercase;padding:4px 10px;border-radius:6px;border:1px solid var(--border-strong);
+    background:var(--surface);color:var(--muted);cursor:pointer;display:inline-flex;align-items:center;gap:5px;transition:all .15s;}
+  .copy-btn:hover{color:var(--ink);border-color:var(--accent);}
+  .copy-btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+  .copy-btn.copied{color:#fff;background:var(--accent);border-color:var(--accent);}
+  .copy-btn svg{width:12px;height:12px;}
+  .edit-badge{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:11px;color:var(--muted);
+    background:var(--panel);border:1px solid var(--border);border-radius:6px;padding:5px 11px;margin:2px 0 0;}
+  .edit-badge b{color:var(--ink);font-weight:600;}
+
+  ul.tight{margin:8px 0 0;padding-left:20px;}
+  ul.tight li{margin:3px 0;font-size:14px;}
+  .note{font-size:13px;color:var(--muted);margin-top:10px;}
+  .hr{height:1px;background:var(--border);border:none;margin:8px 0 0;}
+  .callout{background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:0 8px 8px 0;padding:14px 18px;margin:16px 0;font-size:14px;color:var(--muted);}
+  .callout b{color:var(--ink);}
+  code{font-family:var(--mono);font-size:0.9em;background:var(--panel);padding:1px 5px;border-radius:4px;color:var(--ink);}
+  .foot{margin-top:64px;padding-top:18px;border-top:1px solid var(--border);font-size:12.5px;color:var(--faint);font-family:var(--mono);}
+  .anchor{scroll-margin-top:20px;}
+</style>
+
+<div class="wrap">
+  <p class="eyebrow">{{EYEBROW}}</p>
+  <h1>{{H1}}</h1>
+  <p class="lede">{{LEDE}}</p>
+  <p class="meta">{{META}}</p>
+
+  <div class="legend">
+    <div><span class="dot change"></span><b>Requirement change / conflict</b> — the call changes or limits a current acceptance criterion (AC)</div>
+    <div><span class="dot open"></span><b>Open question</b> — not decided yet; needs an owner before the story is Ready</div>
+    <div><span class="dot new"></span><b>Net-new</b> — a need the call raised that has no story yet</div>
+  </div>
+  <p class="note">Every suggestion below is a <b>draft</b>. Nothing has been written to Jira. The dark code blocks are paste-ready text for the story's description or a comment.</p>
+  <p class="edit-badge">✎&nbsp; The paste-ready blocks are <b>editable</b> — click into one to tweak the wording, then hit <b>Copy</b> to grab your edited version.</p>
+
+  <!-- BODY -->
+
+  <p class="foot">{{FOOT}}</p>
+</div>
+
+<script>
+(function(){
+  var COPY_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>';
+  function label(btn, text, copied){
+    btn.innerHTML = (copied ? '' : COPY_ICON) + '<span>' + text + '</span>';
+    btn.classList.toggle('copied', !!copied);
+  }
+  function flash(btn){
+    label(btn, 'Copied', true);
+    setTimeout(function(){ label(btn, 'Copy', false); }, 1400);
+  }
+  function fallbackCopy(text, btn){
+    var ta = document.createElement('textarea');
+    ta.value = text; ta.setAttribute('readonly','');
+    ta.style.position='fixed'; ta.style.top='-1000px'; ta.style.opacity='0';
+    document.body.appendChild(ta); ta.select();
+    var ok = false;
+    try { ok = document.execCommand('copy'); } catch(e){ ok = false; }
+    document.body.removeChild(ta);
+    if(ok){ flash(btn); } else { label(btn, 'Press ⌘C', false); }
+  }
+  function doCopy(pre, btn){
+    var text = pre.innerText.replace(/ /g,' ');
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).then(function(){ flash(btn); }, function(){ fallbackCopy(text, btn); });
+    } else {
+      fallbackCopy(text, btn);
+    }
+  }
+  var blocks = document.querySelectorAll('.jira');
+  blocks.forEach(function(block){
+    var pre = block.querySelector('pre');
+    if(!pre) return;
+    pre.setAttribute('contenteditable','true');
+    pre.setAttribute('spellcheck','false');
+    var btn = document.createElement('button');
+    btn.className = 'copy-btn';
+    btn.type = 'button';
+    btn.setAttribute('aria-label','Copy this block');
+    label(btn, 'Copy', false);
+    btn.addEventListener('click', function(){ doCopy(pre, btn); });
+    block.appendChild(btn);
+  });
+})();
+</script>

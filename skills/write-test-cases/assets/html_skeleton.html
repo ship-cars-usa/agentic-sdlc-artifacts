@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{TITLE}}</title>
+<style>
+  /* ============================================================
+     Test-Design-Document skeleton -- light-first, card-based,
+     theme-aware. Matches the Step-8 mockups page aesthetic:
+     light surfaces, Given(blue)/When(amber)/Then(green), a purple
+     hero, and tinted semantic pills. Styled entirely through tokens
+     so the dark theme is a token swap, never a per-component rule.
+     ============================================================ */
+  :root {
+    --bg:#eef0f3; --surface:#ffffff; --surface-2:#f4f6f9; --border:#e0e3e9;
+    --ink:#1a1a2e; --ink-soft:#2b3543; --muted:#5c6472; --link:#2563eb;
+    --code-bg:#eef1f6; --code-fg:#0550ae;
+    --given:#2563eb; --when:#b45309; --then:#059669;
+    --g-t:#1a7f37; --g-bg:#e6f4ea; --g-bd:#abd8b8;   /* green   */
+    --r-t:#cf222e; --r-bg:#fdeceb; --r-bd:#f3b7b3;   /* red     */
+    --a-t:#9a6700; --a-bg:#fdf3e0; --a-bd:#eccf92;   /* amber   */
+    --tl-t:#0d7370; --tl-bg:#e3f4f3; --tl-bd:#a6dcd8; /* teal    */
+    --b-t:#1a56b0; --b-bg:#eaf1fb; --b-bd:#c5d6f0;   /* blue    */
+    --gr-t:#5c6472; --gr-bg:#eef1f5; --gr-bd:#d5dbe3; /* gray    */
+    --oq-t:#3730a3; --oq-bg:#eef2ff; --oq-bd:#818cf8; --oq-accent:#6366f1; /* indigo/OQ */
+    --shadow:0 1px 2px rgba(20,20,50,.05);
+  }
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]){
+      --bg:#141519; --surface:#1e2027; --surface-2:#262932; --border:#333744;
+      --ink:#e7e9ee; --ink-soft:#cbd2dc; --muted:#9aa1af; --link:#7cb0ff;
+      --code-bg:#12151b; --code-fg:#9ec5ff;
+      --given:#60a5fa; --when:#fbbf24; --then:#34d399;
+      --g-t:#56d364; --g-bg:#10331d; --g-bd:#245c34;
+      --r-t:#ff9d96; --r-bg:#3a1d1f; --r-bd:#5a2a2c;
+      --a-t:#f4cd6b; --a-bg:#3a2e12; --a-bd:#5a4519;
+      --tl-t:#5ccfc9; --tl-bg:#10292a; --tl-bd:#1f4a4c;
+      --b-t:#8fb0ff; --b-bg:#16233c; --b-bd:#2f456b;
+      --gr-t:#9aa1af; --gr-bg:#2b2f39; --gr-bd:#3a3f4b;
+      --oq-t:#c7d0ff; --oq-bg:#20233a; --oq-bd:#4b52c9; --oq-accent:#818cf8;
+      --shadow:0 1px 2px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#141519; --surface:#1e2027; --surface-2:#262932; --border:#333744;
+    --ink:#e7e9ee; --ink-soft:#cbd2dc; --muted:#9aa1af; --link:#7cb0ff;
+    --code-bg:#12151b; --code-fg:#9ec5ff;
+    --given:#60a5fa; --when:#fbbf24; --then:#34d399;
+    --g-t:#56d364; --g-bg:#10331d; --g-bd:#245c34;
+    --r-t:#ff9d96; --r-bg:#3a1d1f; --r-bd:#5a2a2c;
+    --a-t:#f4cd6b; --a-bg:#3a2e12; --a-bd:#5a4519;
+    --tl-t:#5ccfc9; --tl-bg:#10292a; --tl-bd:#1f4a4c;
+    --b-t:#8fb0ff; --b-bg:#16233c; --b-bd:#2f456b;
+    --gr-t:#9aa1af; --gr-bg:#2b2f39; --gr-bd:#3a3f4b;
+    --oq-t:#c7d0ff; --oq-bg:#20233a; --oq-bd:#4b52c9; --oq-accent:#818cf8;
+    --shadow:0 1px 2px rgba(0,0,0,.35);
+  }
+  * { box-sizing:border-box; }
+  body {
+    margin:0; background:var(--bg); color:var(--ink);
+    font:15px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  .wrap { max-width:1060px; margin:0 auto; padding:34px 22px 80px; }
+
+  /* purple hero -- fixed color, reads on either theme ground */
+  header.doc {
+    border-radius:16px; padding:24px 28px; margin-bottom:26px;
+    background:linear-gradient(135deg,#3a1d70,#5a2ea0); color:#fff;
+    box-shadow:0 2px 10px rgba(58,29,112,.22);
+  }
+  header.doc h1 { margin:0 0 6px; font-size:25px; letter-spacing:-.3px; text-wrap:balance; }
+  header.doc .sub { color:#e8def7; font-size:14px; }
+  .meta { display:flex; flex-wrap:wrap; gap:8px; margin-top:16px; }
+  /* chips are white pills with colored text so they pop on the purple hero */
+  .chip {
+    background:#fff; color:var(--b-t); border:1px solid var(--b-bd); border-radius:999px;
+    padding:3px 11px; font-size:12px; font-weight:600;
+  }
+  .chip.qa   { color:var(--tl-t); border-color:var(--tl-bd); }
+  .chip.edge { color:var(--a-t);  border-color:var(--a-bd); }
+  .chip.oq   { color:var(--oq-t); border-color:var(--oq-bd); }
+  .chip.surf { color:var(--g-t);  border-color:var(--g-bd); }
+
+  h2 {
+    font-size:19px; margin:34px 0 14px; padding-bottom:8px; border-bottom:2px solid var(--border);
+    letter-spacing:-.2px; color:var(--ink);
+  }
+  h3 { font-size:16px; margin:24px 0 10px; color:var(--ink-soft); }
+  p { margin:10px 0; }
+  blockquote {
+    margin:14px 0; padding:14px 18px; border-left:3px solid #7c5cff;
+    background:var(--surface-2); border-radius:0 10px 10px 0; color:var(--ink-soft);
+  }
+  code {
+    background:var(--code-bg); padding:1.5px 6px; border-radius:5px; font-size:13px;
+    font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace; color:var(--code-fg);
+  }
+  table { border-collapse:collapse; width:100%; margin:14px 0; font-size:13px; }
+  .tbl-scroll { overflow-x:auto; }
+  th,td { border:1px solid var(--border); padding:8px 11px; text-align:left; vertical-align:top; }
+  th { background:var(--surface-2); color:var(--ink-soft); font-weight:600; white-space:nowrap; }
+  td code { font-size:12px; }
+  ul,ol { margin:10px 0; padding-left:22px; }
+  li { margin:6px 0; }
+
+  .stats { display:flex; flex-wrap:wrap; gap:12px; margin:18px 0; }
+  .stat {
+    border:1px solid var(--border); border-radius:12px; background:var(--surface-2);
+    padding:12px 18px; min-width:112px;
+  }
+  .stat .n { font-size:24px; font-weight:700; letter-spacing:-.5px; color:var(--ink); }
+  .stat .l { color:var(--muted); font-size:12px; text-transform:uppercase; letter-spacing:.05em; }
+  .tech-note { color:var(--muted); font-size:13px; }
+  .tech-note b { color:var(--ink-soft); }
+
+  .pill { display:inline-block; padding:1px 8px; border-radius:6px; font-size:11.5px; font-weight:600; white-space:nowrap; border:1px solid; }
+  .pill.pos    { background:var(--g-bg);  color:var(--g-t);  border-color:var(--g-bd); }
+  .pill.neg    { background:var(--r-bg);  color:var(--r-t);  border-color:var(--r-bd); }
+  .pill.bound  { background:var(--tl-bg); color:var(--tl-t); border-color:var(--tl-bd); }
+  .pill.edge   { background:var(--a-bg);  color:var(--a-t);  border-color:var(--a-bd); }
+  .pill.p1     { background:var(--r-bg);  color:var(--r-t);  border-color:var(--r-bd); }
+  .pill.p2     { background:var(--a-bg);  color:var(--a-t);  border-color:var(--a-bd); }
+  .pill.p3     { background:var(--gr-bg); color:var(--gr-t); border-color:var(--gr-bd); }
+  .pill.auto   { background:var(--g-bg);  color:var(--g-t);  border-color:var(--g-bd); }
+  .pill.manual { background:var(--b-bg);  color:var(--b-t);  border-color:var(--b-bd); }
+
+  /* open-question callouts -- indigo, matching the mockups' OQ colour language */
+  .oq {
+    border:1px solid var(--border); border-left:4px solid var(--oq-accent); background:var(--oq-bg);
+    padding:12px 16px; border-radius:0 10px 10px 0; margin:12px 0;
+  }
+  .oq b { color:var(--oq-t); }
+  .oq .q { display:block; font-weight:600; color:var(--oq-t); margin-bottom:4px; }
+  .oq .why { color:var(--muted); font-size:13px; }
+
+  /* shared-precondition Background block */
+  .bg { border:1px dashed var(--border); background:var(--surface-2); border-radius:10px; padding:9px 15px; margin:10px 0 14px; }
+  .bg-h { font-size:11px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); margin-bottom:2px; }
+
+  .fig { border:1px solid var(--border); border-radius:14px; background:var(--surface); padding:20px; margin:22px 0; box-shadow:var(--shadow); }
+  .fig-scroll { overflow-x:auto; }
+  .fig .cap { color:var(--muted); font-size:13px; margin-top:12px; text-align:center; }
+  .fig .cap b { color:var(--ink-soft); }
+
+  /* Given/When/Then test-case cards */
+  .tc { border:1px solid var(--border); border-radius:12px; background:var(--surface); padding:13px 16px 12px; margin:14px 0; box-shadow:var(--shadow); }
+  .tc .tc-h { display:flex; flex-wrap:wrap; align-items:baseline; gap:7px 9px; }
+  .tc .tc-h .id { font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace; font-size:12.5px; color:var(--code-fg); }
+  .tc .tc-h .ttl { font-weight:600; color:var(--ink); margin-right:auto; }
+  .tc .tc-meta { color:var(--muted); font-size:12px; margin:5px 0 2px; }
+  .tc .tc-meta code { font-size:11.5px; }
+  .gwt { list-style:none; margin:9px 0 0; padding:0; }
+  .gwt li { display:flex; gap:10px; margin:3px 0; font-size:13.5px; color:var(--ink-soft); }
+  .gwt .kw { flex:0 0 52px; font-weight:700; text-transform:uppercase; font-size:11px; letter-spacing:.04em; line-height:1.65; }
+  .gwt .kw.g { color:var(--given); } .gwt .kw.w { color:var(--when); } .gwt .kw.t { color:var(--then); } .gwt .kw.and { color:var(--muted); }
+  .gwt .examples { margin:8px 0 2px; }
+
+  svg { display:block; margin:0 auto; max-width:100%; height:auto; }
+  svg text { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; }
+  .mono { font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace; }
+  footer { margin-top:50px; padding-top:18px; border-top:1px solid var(--border); color:var(--muted); font-size:12.5px; }
+  a { color:var(--link); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="doc">
+  <h1>{{H1}}</h1>
+  <div class="sub">{{SUBTITLE}}</div>
+  <div class="meta">
+{{CHIPS}}
+  </div>
+</header>
+
+<!-- BODY -->
+
+<footer>
+{{FOOTER}}
+</footer>
+
+</div>
+</body>
+</html>
