@@ -203,6 +203,6 @@ cat <<EOF
       agentic-sdlc-artifacts/   skills/ + grooming/ + codebase-map/ + CDR/ + jira-breakdowns/ + tdd/
       .claude/skills/           copies of the vendored skills (re-run install-sdlc.sh to update them)
 
-Next: provide a Jira read token ($JIRA_READ_TOKEN or agentic-sdlc-artifacts/grooming/jira-read.txt),
+Next: provide a Jira read token (\$JIRA_READ_TOKEN or agentic-sdlc-artifacts/grooming/jira-read.txt),
 connect the Figma MCP, and ensure gcloud + git are authenticated. Then the skills are ready.
 EOF
