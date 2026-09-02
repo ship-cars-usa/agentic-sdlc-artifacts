@@ -25,6 +25,7 @@ Keep `Services` slugs matching `codebase-map/repos/<slug>.md` so records stay jo
 | [SCP-15096](SCP-15096/) | proposed | [AAAG] VIN mandatory during Manual Status Update where Ghost Vehicle is enabled |
 | [SCP-15134](SCP-15134/) | proposed | [Montway][Faster Payments] Faster-Pay eligibility in LoadScout recommendations |
 | [SCP-15137](SCP-15137/) | proposed | Enable Driver LoadBoard access by default |
+| [SCP-15147](SCP-15147/) | proposed | COI report for AAAG — feasibility + effort; blocked on the SCP-14902 backfill |
 | [SCP-15149](SCP-15149/) | proposed | Alarm for Importing Issues — retune the existing ML-parser alarm (SCP-12557) |
 | [cdr-0007](cdr-0007/) | example | Add expedited flag to CTMS orders (illustrative walkthrough) |
 | [cdr-0008](cdr-0008/) | shipped | Idempotency key on carrier payment transactions |
