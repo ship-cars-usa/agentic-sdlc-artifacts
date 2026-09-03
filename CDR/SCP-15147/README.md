@@ -91,6 +91,7 @@ So the only new artefact is **one gold materialized view**. No new endpoint, no 
 | `GET /{company_id}/coi-report` | 🔴 removed | proposed by the 2026-09-02 record; **no longer needed** |
 | Django internal "list a shipper's network" endpoint | 🔴 removed | proposed by the 2026-09-02 record; **no longer needed** |
 | `posting-backend` Reporting report type + Temporal schedule | 🔴 removed | proposed by the 2026-09-02 record; over-engineering against the actual ask |
+| any service-to-service read of the gold view | 🔴 removed | **not possible.** A fleet-wide audit (2026-09-03) found nothing in the fleet runs SQL against Databricks — no `jdbc:databricks`, no `DatabricksJDBC`, no `databricks-sql-connector`, no `/api/2.0/sql/statements`, and no repo declares a Databricks SDK. `bi-databricks-backend` is an **OAuth + embed-token broker only** (`POST /oidc/v1/token`, `GET /api/2.0/lakeview/dashboards/{id}/published/tokeninfo`) and never reads data; the only programmatic consumption pattern is an embedded AI/BI dashboard querying from the browser via `@databricks/aibi-client`. The view is therefore consumed by a human or by an embed — never by a backend |
 
 ## Where it lives & how it's wired
 
@@ -105,6 +106,7 @@ So the only new artefact is **one gold materialized view**. No new endpoint, no 
 | BI tool | Metabase — the internal-only support instance (`nginx-internal`; owner recorded as a podLabel in its helm values) |
 | ingestion | Airbyte CDC → GCS Parquet → `bronze_{env}_catalog` · `production` at `0 0 2,14` UTC, `company_documents` at `0 15 2,14` UTC |
 | pipeline refresh | Databricks `ml_central_data_storage_refresh` · `0 0 11,16` GMT · `UNPAUSED` in prod, **`PAUSED`** in staging |
+| consumption | human (Databricks UI / Metabase) or an embedded AI/BI dashboard via the token broker — **no backend read path exists fleet-wide** |
 | topic | none — no Pub/Sub delta |
 | ES index | none — no Elasticsearch delta |
 | jira home | the report belongs under epic **RE-976 "Reporting Requests"**; SCP-15147 correctly owns the `company-documents` backfill prerequisite |
@@ -127,6 +129,6 @@ So the only new artefact is **one gold materialized view**. No new endpoint, no 
 > - **Silver column presence unproven** — silver declares no schema and its only data-quality check is `__START_AT IS NOT NULL`, so nothing would have alerted if the 2026-08 columns never arrived.
 > - **No staging validation path** — validate in `dev`, promote to `prod`.
 > - **Freshness is ~12–24h end to end** (Airbyte twice daily → Databricks twice daily). Ample for a weekly report; do not describe the output as live.
-> - **Delivery is a queryable table, not a pushed file** — `ml-central-data-storage` has no email or export mechanism. A Databricks SQL subscription is a follow-up, not part of this estimate.
+> - **Delivery is a queryable table, not a pushed file — and that is structural, not a gap in this repo.** A fleet-wide audit (2026-09-03) found **no service-to-service query path into Databricks anywhere**: the only programmatic consumption pattern is an embedded AI/BI dashboard, and `ml-central-data-storage` has no email or export mechanism either. So the view is read by a human in the Databricks UI or via an embed — no backend can consume it. A Databricks SQL subscription or export job is a follow-up, not part of this estimate, and would be the first of its kind in the fleet.
 > - **The sample itself is partly corrupt** — one expiration cell reads literally `Oct`, five rows say COI=`No` yet carry dates. Reconciliation must expect the *sample* to be wrong in those places, not the query.
 > - **Tier 2 must not become permanent** — the Metabase grant leaves a manual lookup step. Label it a bridge, or the days-of-support-work problem simply returns in a faster form.
