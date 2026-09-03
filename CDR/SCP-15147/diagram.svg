@@ -1,58 +1,78 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 940 500" width="940" height="500">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1180 500" width="1180" height="500">
   <defs>
-    <marker id="arrGray" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><polygon points="0,0 9,4.5 0,9" fill="#8a929b"/></marker>
-    <marker id="arrHot" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><polygon points="0,0 9,4.5 0,9" fill="#b45309"/></marker>
+    <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><polygon points="0,0 10,5 0,10" fill="#8a929b"/></marker>
+    <marker id="arh" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><polygon points="0,0 10,5 0,10" fill="#b45309"/></marker>
+    <marker id="arx" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><polygon points="0,0 10,5 0,10" fill="#b91c1c"/></marker>
   </defs>
-  <rect x="0" y="0" width="940" height="500" fill="#ffffff"/>
+  <rect x="0" y="0" width="1180" height="500" fill="#ffffff"/>
 
-  <text x="16" y="24" fill="#5c646d" font-size="12" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif">SCP-15147 — the join, and the boundary that shapes every option. Every hop keys on the same C-… user-management id.</text>
+  <text x="16" y="24" fill="#5c646d" font-size="11.5" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif" letter-spacing="0.06em">SOURCE OF TRUTH — Cloud SQL instance "platform" (POSTGRES_18) · three databases, one host</text>
 
-  <rect x="16" y="44" width="188" height="76" rx="8" fill="#f5f6f8" stroke="#cbd2d9" stroke-width="1.5"/>
-  <text x="110" y="70" fill="#16191d" font-size="14" font-weight="600" text-anchor="middle" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif">AAAG parent company</text>
-  <text x="110" y="90" fill="#5c646d" font-size="12" text-anchor="middle" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif">C-JCJSA2NLCNBDVIMMMM6Z43I52I</text>
-  <text x="110" y="109" fill="#7a828b" font-size="11" font-style="italic" text-anchor="middle" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif">already hardcoded in utils/aaag/</text>
+  <rect x="16" y="36" width="252" height="76" rx="8" fill="#f5f6f8" stroke="#cbd2d9" stroke-width="1.5"/>
+  <text x="30" y="59" fill="#16191d" font-size="14" font-weight="600" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif">DB: production</text>
+  <text x="30" y="78" fill="#5c646d" font-size="12" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif">users_company ·</text>
+  <text x="30" y="94" fill="#5c646d" font-size="12" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif">compliance_network_…link</text>
+  <text x="30" y="108" fill="#7a828b" font-size="11" font-style="italic" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif">report columns 1–3</text>
 
-  <rect x="248" y="44" width="188" height="76" rx="8" fill="#fbe7d6" stroke="#c2703d" stroke-width="1.5"/>
-  <text x="342" y="70" fill="#16191d" font-size="14" font-weight="600" text-anchor="middle" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif">~15+ child auctions</text>
-  <text x="342" y="90" fill="#5c646d" font-size="12" text-anchor="middle" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif">Albany · Atlanta · Baton Rouge …</text>
-  <text x="342" y="109" fill="#b45309" font-size="11" font-weight="600" text-anchor="middle" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif">each has its OWN network</text>
+  <rect x="292" y="36" width="252" height="76" rx="8" fill="#fbe7d6" stroke="#c2703d" stroke-width="1.5"/>
+  <text x="306" y="59" fill="#16191d" font-size="14" font-weight="600" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif">DB: company_documents</text>
+  <text x="306" y="78" fill="#5c646d" font-size="12" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif">CarrierDocument ·</text>
+  <text x="306" y="94" fill="#5c646d" font-size="12" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif">ShipperCarrierDocument</text>
+  <text x="306" y="108" fill="#7a828b" font-size="11" font-style="italic" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif">report columns 4–6 · + updated_at 🟢</text>
 
-  <path d="M204 82 H244" fill="none" stroke="#b45309" stroke-width="1.8" marker-end="url(#arrHot)"/>
-  <text x="224" y="74" fill="#b45309" font-size="11" text-anchor="middle" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif">parent_id</text>
+  <rect x="568" y="36" width="240" height="76" rx="8" fill="#f5f6f8" stroke="#cbd2d9" stroke-width="1.5"/>
+  <text x="582" y="59" fill="#16191d" font-size="14" font-weight="600" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif">DB: posting (core inst.)</text>
+  <text x="582" y="78" fill="#5c646d" font-size="12" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif">company.external_parent_</text>
+  <text x="582" y="94" fill="#5c646d" font-size="12" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif">company_id</text>
+  <text x="582" y="108" fill="#7a828b" font-size="11" font-style="italic" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif">the 49 auctions (not in Django)</text>
 
-  <rect x="16" y="186" width="420" height="122" rx="8" fill="#f5f6f8" stroke="#cbd2d9" stroke-width="1.5"/>
-  <text x="34" y="210" fill="#374151" font-size="12" font-weight="600" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif">platform-backend · Postgres "platform"</text>
-  <rect x="34" y="222" width="384" height="70" rx="6" fill="#ffffff" stroke="#cbd2d9" stroke-width="1.2"/>
-  <text x="50" y="243" fill="#16191d" font-size="13" font-weight="600" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif">ComplianceNetworkLink</text>
-  <text x="50" y="262" fill="#5c646d" font-size="12" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif">shipper · carrier · status · document_request_status</text>
-  <text x="50" y="281" fill="#7a828b" font-size="11" font-style="italic" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif">answers: who is in this auction's network</text>
-  <path d="M342 120 V182" fill="none" stroke="#8a929b" stroke-width="1.6" marker-end="url(#arrGray)"/>
+  <path d="M268 74 L290 74" fill="none" stroke="#b91c1c" stroke-width="2" stroke-dasharray="5 3"/>
+  <text x="279" y="140" fill="#b91c1c" font-size="12" text-anchor="middle" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif">✗ Postgres cannot JOIN across databases</text>
+  <text x="279" y="156" fill="#7a828b" font-size="11" font-style="italic" text-anchor="middle" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif">no postgres_fdw / dblink provisioned</text>
 
-  <rect x="524" y="186" width="400" height="248" rx="8" fill="#f5f6f8" stroke="#cbd2d9" stroke-width="1.5"/>
-  <text x="542" y="210" fill="#374151" font-size="12" font-weight="600" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif">company-documents · Postgres "company-documents"</text>
+  <text x="16" y="196" fill="#5c646d" font-size="11.5" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif" letter-spacing="0.06em">WAREHOUSE PATH — already built end to end · 0 pipeline work</text>
 
-  <rect x="542" y="222" width="364" height="90" rx="6" fill="#fbe7d6" stroke="#c2703d" stroke-width="1.2"/>
-  <text x="558" y="243" fill="#16191d" font-size="13" font-weight="600" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif">CarrierDocument</text>
-  <text x="558" y="262" fill="#5c646d" font-size="12" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif">type · document_status · visibility · filename</text>
-  <text x="558" y="281" fill="#b45309" font-size="12" font-weight="600" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif">versions_create_time_list → upload date</text>
-  <text x="558" y="300" fill="#b91c1c" font-size="11" font-weight="600" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif">NULL for old rows until the backfill runs</text>
+  <path d="M142 112 L142 214" fill="none" stroke="#b45309" stroke-width="1.8" marker-end="url(#arh)"/>
+  <path d="M418 112 L418 214" fill="none" stroke="#b45309" stroke-width="1.8" marker-end="url(#arh)"/>
+  <path d="M688 112 L688 214" fill="none" stroke="#b45309" stroke-width="1.8" marker-end="url(#arh)"/>
+  <text x="152" y="180" fill="#b45309" font-size="11" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif">CDC</text>
 
-  <rect x="542" y="326" width="364" height="90" rx="6" fill="#fbe7d6" stroke="#c2703d" stroke-width="1.2"/>
-  <text x="558" y="347" fill="#16191d" font-size="13" font-weight="600" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif">ShipperCarrierDocument (per-shipper wrapper)</text>
-  <text x="558" y="366" fill="#5c646d" font-size="12" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif">expiration_date → the expiry the auction typed in</text>
-  <text x="558" y="385" fill="#5c646d" font-size="12" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif">is_shipper_tracked · internal_notes → did they review?</text>
-  <text x="558" y="404" fill="#b45309" font-size="11" font-weight="600" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif">updated_at ADDED — "last reviewed" is blind today</text>
+  <rect x="16" y="214" width="792" height="58" rx="8" fill="#f5f6f8" stroke="#cbd2d9" stroke-width="1.5"/>
+  <text x="30" y="237" fill="#16191d" font-size="14" font-weight="600" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif">🔵 Airbyte CDC → GCS Parquet → bronze_{env}_catalog</text>
+  <text x="30" y="257" fill="#5c646d" font-size="12" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif">non_breaking_schema_updates_behavior = "propagate_fully" + new-column backfill · 0 0 2,14 UTC — already replicates every needed column</text>
 
-  <path d="M436 252 H520" fill="none" stroke="#b45309" stroke-width="1.8" marker-end="url(#arrHot)"/>
-  <text x="478" y="243" fill="#b45309" font-size="11" text-anchor="middle" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif">carrier_id</text>
-  <text x="478" y="270" fill="#b45309" font-size="11" text-anchor="middle" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif">= C-… UMID</text>
+  <path d="M412 272 L412 294" fill="none" stroke="#8a929b" stroke-width="1.6" marker-end="url(#ar)"/>
+  <rect x="16" y="294" width="792" height="56" rx="8" fill="#f5f6f8" stroke="#cbd2d9" stroke-width="1.5"/>
+  <text x="30" y="316" fill="#16191d" font-size="14" font-weight="600" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif">🔵 silver_{env}_catalog — 6 transformations, all exist, all wired into the dev + prod globs</text>
+  <text x="30" y="336" fill="#5c646d" font-size="12" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif">posting_core.company · production_platform.{users_company, compliance_network…} · company_documents_platform.{carrierdocument, shippercarrierdocument}</text>
 
-  <path d="M480 156 V462" fill="none" stroke="#b91c1c" stroke-width="1.6" stroke-dasharray="5 3"/>
-  <text x="480" y="150" fill="#b91c1c" font-size="12" font-weight="600" text-anchor="middle" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif">separate Postgres instances</text>
-  <text x="480" y="480" fill="#b91c1c" font-size="12" font-weight="600" text-anchor="middle" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif">no cross-DB join — one side must call the other</text>
+  <path d="M808 322 L862 322" fill="none" stroke="#b45309" stroke-width="1.8" marker-end="url(#arh)"/>
+  <text x="835" y="314" fill="#b45309" font-size="11" text-anchor="middle" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif">1 SQL</text>
 
-  <rect x="16" y="344" width="420" height="90" rx="8" fill="#f5f6f8" stroke="#cbd2d9" stroke-width="1.5"/>
-  <text x="34" y="368" fill="#374151" font-size="12" font-weight="600" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif">GCS bucket · blob metadata</text>
-  <text x="34" y="390" fill="#5c646d" font-size="12" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif">Source of truth for upload times and document metadata.</text>
-  <text x="34" y="411" fill="#7a828b" font-size="11" font-style="italic" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif">Avoided by design: one bucket listing per carrier per auction.</text>
+  <rect x="866" y="278" width="298" height="88" rx="8" fill="#fbe7d6" stroke="#c2703d" stroke-width="2"/>
+  <text x="880" y="302" fill="#16191d" font-size="14" font-weight="600" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif">🟢 gold · internal_reports</text>
+  <text x="880" y="322" fill="#16191d" font-size="13" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif">AaagLmpCoiTracker</text>
+  <text x="880" y="340" fill="#5c646d" font-size="12" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif">6 cols · 1 row per (auction, carrier)</text>
+  <text x="880" y="357" fill="#7a828b" font-size="11" font-style="italic" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif">THE ONLY NEW ARTEFACT · ~180 lines</text>
+
+  <text x="16" y="398" fill="#5c646d" font-size="11.5" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif" letter-spacing="0.06em">BI PATH — the manual process today, and the Tier-1 bridge</text>
+
+  <rect x="16" y="410" width="322" height="56" rx="8" fill="#f5f6f8" stroke="#cbd2d9" stroke-width="1.5"/>
+  <text x="30" y="432" fill="#16191d" font-size="13.5" font-weight="600" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif">platform-replica-analytics (6 vCPU)</text>
+  <text x="30" y="451" fill="#5c646d" font-size="11.5" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif">carries BOTH databases · 🟢 GRANT on company_documents</text>
+  <path d="M142 112 L142 168 L104 168 L104 410" fill="none" stroke="#8a929b" stroke-width="1.4" stroke-dasharray="3 3" marker-end="url(#ar)"/>
+
+  <path d="M338 438 L400 438" fill="none" stroke="#8a929b" stroke-width="1.6" marker-end="url(#ar)"/>
+  <rect x="404" y="410" width="256" height="56" rx="8" fill="#f5f6f8" stroke="#cbd2d9" stroke-width="1.5"/>
+  <text x="418" y="432" fill="#16191d" font-size="13.5" font-weight="600" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif">Metabase (internal only)</text>
+  <text x="418" y="451" fill="#5c646d" font-size="11.5" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif">existing question → columns 1–3</text>
+
+  <path d="M660 438 L722 438" fill="none" stroke="#b91c1c" stroke-width="1.8" stroke-dasharray="5 3" marker-end="url(#arx)"/>
+  <rect x="726" y="410" width="298" height="56" rx="8" fill="#fdeaea" stroke="#b91c1c" stroke-width="1.5"/>
+  <text x="740" y="432" fill="#b91c1c" font-size="13.5" font-weight="600" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif">🔴 columns 4–6 typed in BY HAND</text>
+  <text x="740" y="451" fill="#5c646d" font-size="11.5" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif">659 rows · days of work · 4 classes of error</text>
+
+  <path d="M1015 366 L1015 392 L1024 392 L1024 424 L1030 424" fill="none" stroke="#b45309" stroke-width="1.6" marker-end="url(#arh)"/>
+  <text x="1090" y="392" fill="#b45309" font-size="11.5" text-anchor="middle" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif">replaces the</text>
+  <text x="1090" y="407" fill="#b45309" font-size="11.5" text-anchor="middle" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif">manual step</text>
 </svg>

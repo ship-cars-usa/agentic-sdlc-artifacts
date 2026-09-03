@@ -1,8 +1,8 @@
 # COI report for AAAG - feasibility and effort
 
-`SCP-15147` · **proposed** · 2026-09-02 · hristo.savov@ship.cars · groomed 2026-09-02
+`SCP-15147` · **proposed** · 2026-09-03 · hristo.savov@ship.cars · groomed 2026-09-03 (re-groomed)
 
-**Services:** `company-documents`, `platform-backend`, `posting-backend`, `ml-central-data-storage`, `bi-databricks-backend`
+**Services:** `ml-central-data-storage`, `company-documents`, `platform-backend`, `airbyte`, `metabase`
 
 **Legend:** 🟢 added · 🟡 updated · 🔴 removed · 🔵 reused
 
@@ -10,116 +10,123 @@
 
 ## Context
 
-AAAG want a weekly report listing, for every carrier in each America's Auto Auction carrier network, whether the carrier uploaded **and shared** a COI (cargo insurance) with that auction, and if so its upload date and expiration date. Support produced it once by hand over several days. The stated motivation is HQ's, not AAAG's: there is no visibility into whether the auctions are checking carrier documents at all.
+> **Supersedes the 2026-09-02 record.** On 2026-09-03 the story was updated with `AAAG_LMP_COI Tracker_Reporting Request_Form (1).xlsx` — the org's **Databricks report-request form** plus a **659-row sample report**. It narrows the ask substantially and corrects two facts the earlier record got wrong. Every source fact below was re-verified against the deployed branches.
 
-The report is feasible with **no new data capture** — all four facts are queryable in SQL today, on columns SCP-14900/14901 added and SCP-14902 backfills. Two constraints shape the design. First, the network list (`ComplianceNetworkLink`, platform-backend's Postgres) and the document facts (`CarrierDocument` / `ShipperCarrierDocument`, company-documents' own Postgres) live in **separate database instances**, so no single statement can produce the report — one side must call the other. Second, the *interactive* document-listing path is GCS-driven (one bucket listing per carrier), which is exactly why the denormalized columns exist; the report must use them and stay pure-SQL.
+AAAG mandate their auctions to hold a current Certificate of Insurance for every hauler. The requester (Business Development) wants a weekly report answering two questions: **which auctions still have carriers outstanding**, and **which carriers' COIs are expiring**.
 
-A read-only prod log cross-check on 2026-09-02 turned up one blocker and one caveat:
+**The ask is narrower than the story's AC.** A working report already exists — built in Metabase by the BI/reporting owner — and three of its six columns are filled in **by hand**. The form's own words: *"See 'COI Report' Tab for the three columns of data that we can't pull today that are manual… The other data points we can currently pull via Metabase… We just need the ability for him to pull in these few fields that currently aren't available."* So the deliverable is making three fields queryable next to the other three, not building a report product.
 
-- **No evidence the SCP-14902 backfill has run in prod.** Two independent 60-day searches — by pod name and by the script's own log strings — returned nothing. Without it, `CarrierDocument.type` and `versions_create_time_list` are NULL for every pre-existing document, so a `type='cargo_insurance'` report returns almost nothing while *looking* correct.
-- **The data foundation went live essentially today.** `GET /{shipper}/compliance-statuses` returned 404 on 18 of 18 prod calls up to 2026-08-31, then 200 after the 2026-09-02 07:49 UTC container restart. Nothing has been exercised against real AAAG data.
-- The `filter_to_granted_carriers` fail-open path is **not** currently firing (zero occurrences in 14 days), though the code path stands and the new endpoint must not inherit it.
+The sample tab specifies the artefact exactly: **6 columns, one row per (auction, carrier)** — `Auction Name`, `Carrier Name`, `Status`, `COI` (Yes/No), `Upload Date`, `Expiration Date` — across **49** America's Auto Auction child auctions and 526 carriers.
 
-Two scope decisions are still open and change the column list, not the plumbing. **"AAAG's carrier network" is ~15+ networks**, one per child auction company, each with its own per-document expiration dates — so the report is per-auction, grouped under the AAAG parent. And **the AC measures carriers, not auctions**: the auction-side review signals (`is_shipper_tracked`, whether an expiration date was entered, `internal_notes`, `document_request_status`, `last_review_date`) are what would actually answer HQ, and they cost little on the same join.
+**Why the answer is Databricks.** The report spans three domains in three different Postgres databases: the auction hierarchy (`posting`), network membership and company names (`production`), and the COI facts (`company_documents`). Postgres cannot join across databases and no `postgres_fdw`/`dblink` is provisioned, so the join is **structurally impossible** in Metabase — which is precisely why three columns are typed in by hand. In the Databricks lakehouse all six tables are schemas in one catalog and the join is one statement.
 
-Delivery is chosen between two existing rails rather than built: a Databricks gold view on AAAG's already-embedded dashboard, or a new report type on `posting-backend`'s production self-service scheduled-report product (Temporal Schedules, per-customer cadence and recipients, CSV → `attachment-backend` → `media-proxy` signed link → SendGrid). The Django `send_report` pattern was considered and rejected — it is on-demand only, with no per-customer schedule and no recipient model.
+That path is already fully built and needs **zero pipeline work**:
+
+- Airbyte CDC already replicates `production` (incl. `users_company`, `compliance_network_compliancenetworklink`) and **all** of `company_documents` into the Databricks bronze volumes, configured `non_breaking_schema_updates_behavior = "propagate_fully"` with new-column backfill — so the columns added on 2026-08-07 propagate automatically.
+- All six silver transformations already exist and are wired into the `dev` **and** `prod` pipeline library globs.
+- The same request form has been filed twice before as **RE-975** and **RE-977** under epic **RE-976 "Reporting Requests"**, both `Done`, each delivered as a **single ~180-line file** in `ml-central-data-storage`.
+
+So the only new artefact is **one gold materialized view**. No new endpoint, no event, no application deploy. This replaces the earlier record's plan for a `company-documents` report endpoint, a Django network-list endpoint and a `posting-backend` Temporal scheduled report — all three are now unnecessary.
+
+**Two corrections to the 2026-09-02 record:**
+
+1. `company_documents` and `production` are **separate databases on the *same* Cloud SQL instance** (`platform`), not separate instances. That matters twice over: a BI read replica (`platform-replica-analytics`) already physically carries both, so exposing the COI tables to Metabase is a GRANT rather than new infrastructure — but they are still separate *databases*, so a single-query join remains impossible.
+2. `compliance-statuses` now returns `expiration_date` **ungated** by `is_shipper_tracked` (SCP-14905, on production), and wrapper status no longer masks a non-active document (SCP-15092). The earlier record invented a new endpoint partly to work around gating that no longer exists.
+
+**One blocker survives.** Three independent 60-day prod log searches found no evidence the SCP-14902 metadata backfill has ever run. Migration `0fa047cb2bea` added `type` and `versions_create_time_list` on **2026-08-07**, but the sample's upload dates reach back to **2023-07-06** — so most of the corpus depends on it. Documents with `type = NULL` are invisible to a `type='cargo_insurance'` filter: the report would come back near-empty while *looking* correct. The sample's **443 COI=Yes** is the oracle that detects this.
+
+**One limitation cannot be engineered away.** `expiration_date` is **shipper-entered**, not parsed from the document, and **68 of the 443 shared COIs in the sample have none** (15%). Automatic extraction is CPDR-424, in `Parking lot`. The requester's second question is therefore unanswerable for ~15% of carriers regardless of implementation.
 
 ## §2a · PostgreSQL
 
-*Column delta · `ShipperCarrierDocument` (DB `company-documents`)*
+*Column delta · `ShipperCarrierDocument` (database `company_documents`, instance `platform`) — the only schema change in the design; independent of which report route is chosen*
 
 | Column | Type | Change | Null | Default / backfill |
 | --- | --- | --- | --- | --- |
-| `updated_at` | `DateTime` | 🟢 added | y | `default=now()`, `onupdate=now()` — **not retroactive**; "last reviewed by the auction" only starts accruing once shipped |
-| `expiration_date` | `DateTime` | 🔵 reused | n | The per-shipper expiry the auction typed in — the report's expiration column |
-| `is_shipper_tracked` | `Boolean` | 🔵 reused | n | `server_default=false` — auction-side review signal |
-| `internal_notes` | `String` | 🔵 reused | n | Per-shipper note — auction-side review signal |
-| `created_at` | `DateTime` | 🔵 reused | n | Only existing write timestamp; why `updated_at` is needed |
+| `updated_at` | `DateTime` | 🟢 added | y | `default=now()`, `onupdate=now()`; **not retroactive** — answers "when did this auction last review this document" only from ship date forward |
+| `created_at` | `DateTime` | 🔵 reused | n | the only write timestamp on the row today, which is why `updated_at` is needed |
+| `expiration_date` | `DateTime` | 🔵 reused | see note | report column 6. Shipper-entered; blank for 68/443 shared COIs. Model declares `nullable=False` but migration `d5f4426bee2f` created it nullable — verify live schema before relying on NOT NULL |
+| `is_shipper_tracked` | `Boolean` | 🔵 reused | n | added by `0fa047cb2bea`; gates compliance display, **not** `expiration_date` (SCP-14905) |
+| `status` | `String` | 🔵 reused | n | `'active'` is half the sharing predicate |
 
-*Column delta · `CarrierDocument` (DB `company-documents`)*
-
-| Column | Type | Change | Null | Default / backfill |
-| --- | --- | --- | --- | --- |
-| `type` | `String` | 🟡 updated | y | No schema change — **must be backfilled**. NULL rows are invisible to a `type='cargo_insurance'` filter, i.e. silently absent from the report |
-| `versions_create_time_list` | `String` | 🟡 updated | y | No schema change — **must be backfilled**. Comma-joined per-version create times; last element = the report's upload date |
-| `document_status` | `String` | 🔵 reused | y | `active` \| `requested` \| `request_cancelled` \| `archived` — the report must distinguish these, not collapse them |
-| `visibility` | `String` | 🔵 reused | y | `public` \| `private` — half of the sharing predicate |
-
-*Column delta · `ComplianceNetworkLink` (DB `platform`, platform-backend)*
+*Data delta (no schema change) · `CarrierDocument` (database `company_documents`)*
 
 | Column | Type | Change | Null | Default / backfill |
 | --- | --- | --- | --- | --- |
-| `shipper` / `carrier` | FK `Company` | 🔵 reused | n | `unique_together` — one link per (auction, carrier); the report's grouping key |
-| `document_request_status` | `CharField` | 🔵 reused | n | `not_requested` \| `requested` \| `granted` — auction-side signal |
-| `last_review_date` | `DateTime` | 🔵 reused | y | Auction-side signal |
+| `type` | `String` | 🟡 backfill required | y | added `0fa047cb2bea` (2026-08-07). **NULL for every earlier document until `scripts/backfill_document_metadata.py` runs.** Report filters `type = 'cargo_insurance'` exactly — the sibling enum member `certificate_of_insurance` = `"certificate_insurance"` is referenced by no route |
+| `versions_create_time_list` | `String` | 🟡 backfill required | y | comma-joined version timestamps; report column 5 = `element_at(split(…, ','), -1)`. Same NULL exposure |
+| `document_status` | `String` | 🔵 reused | y | `'active'` is the other half of the predicate |
+| `visibility` | `String` | 🔵 reused | y | `'public'` + no wrapper row = shared without the auction ever engaging |
+
+*Read-only access delta · database `company_documents` on replica `platform-replica-analytics`*
+
+| Grant | Type | Change | Null | Default / backfill |
+| --- | --- | --- | --- | --- |
+| `CONNECT` on `company_documents` for role `analytics` | grant | 🟢 added | — | role already exists instance-level (`platform/locals.tf:23-30`) |
+| `SELECT` on `CarrierDocument`, `ShipperCarrierDocument` for `analytics` | grant | 🟢 added | — | two tables only; nothing else |
+
+## §2c · Databricks gold view
+
+*New materialized view · `gold_{env}_catalog.internal_reports.AaagLmpCoiTracker` — the design's primary deliverable. One row per (auction, carrier).*
+
+| Column | Type | Change | Source (silver) | Note |
+| --- | --- | --- | --- | --- |
+| `auction_name` | `string` | 🟢 added | `posting_core.company.name` | scoped by `external_parent_company_id`; parameterise on parent **name** so it serves all LMP partners, not just AAAG |
+| `carrier_name` | `string` | 🟢 added | `production_platform.users_company.name` | 526 distinct in the sample |
+| `status` | `string` | 🟢 added | `compliance_network_compliancenetworklink.status` | sample holds only `verified` \| `suspended` \| `under_review` — 3 of the model's 5 values. Filter must be explicit (**Q3**) |
+| `coi` | `string` | 🟢 added | `carrierdocument` + `shippercarrierdocument` | `'Yes'`/`'No'`. Predicate copied verbatim from `shipper_document_route.py:427-438`: `type='cargo_insurance' AND document_status='active' AND (visibility='public' with no wrapper OR wrapper.status='active')` |
+| `upload_date` | `date` | 🟢 added | `carrierdocument.versions_create_time_list` | `element_at(split(…, ','), -1)`; string parse with an ordering assumption (**Q2**) |
+| `expiration_date` | `date` | 🟢 added | `shippercarrierdocument.expiration_date` | the **wrapper's** DateTime, *not* `CarrierDocument.expiration_date` (a nullable String copied from blob metadata) |
+| six silver tables | — | 🔵 reused | — | all exist, all wired into the `dev` + `prod` pipeline globs; every join carries `__END_AT IS NULL AND _ab_cdc_deleted_at IS NULL` |
+| bronze ingestion | — | 🔵 reused | Airbyte CDC | `propagate_fully` + new-column backfill — no pipeline change needed |
+| `user_ids` / row-level security | — | 🔴 removed | — | not applicable: this is an **internal** report in `internal_reports`, not a customer-embedded dashboard, so the `user_ids` RLS column the `executive_dashboards` gold views carry is deliberately absent |
 
 ## §4 · REST API & DTO
 
-*New batch report endpoint · `company-documents`*
+**No delta.** The recommended design adds and changes no endpoint, DTO field or published event anywhere in the fleet.
 
-| Field | Type | Change | JSON name | Subscriber action |
-| --- | --- | --- | --- | --- |
-| — | route | 🟢 added | `GET /{company_id}/coi-report?carrier_ids=…` | Pure SQL, zero GCP calls; reuses the `compliance-statuses` sharing predicate verbatim |
-| `carrier_user_management_id` | `str` | 🟢 added | `carrier_user_management_id` | Join key — the `C-…` UMID |
-| `document_id` | `int \| None` | 🟢 added | `document_id` | `None` when the carrier has no usable COI |
-| `document_status` | `str \| None` | 🟢 added | `document_status` | Lets the consumer separate "never requested" / "requested, not uploaded" / "archived" |
-| `visibility` | `str \| None` | 🟢 added | `visibility` | Public-vs-shared provenance |
-| `upload_date` | `str \| None` | 🟢 added | `upload_date` | Last element of `versions_create_time_list`; matches the UI's "Uploaded:" label |
-| `expiration_date` | `str \| None` | 🟢 added | `expiration_date` | **Ungated** — unlike `compliance-statuses`, returned even when not tracked |
-| `is_shipper_tracked` | `bool` | 🟢 added | `is_shipper_tracked` | Auction-side review signal |
-| `has_internal_notes` | `bool` | 🟢 added | `has_internal_notes` | Auction-side review signal |
-| `wrapper_created_at` | `str \| None` | 🟢 added | `wrapper_created_at` | When the auction first touched the document |
-
-*New internal network-list endpoint · `platform-backend`*
-
-| Field | Type | Change | JSON name | Subscriber action |
-| --- | --- | --- | --- | --- |
-| — | route | 🟢 added | `GET /api/internal/network/carriers/?shipper_id=…` | Enumerates a shipper's network; the existing `document_statuses` can only *filter* a caller-supplied list |
-| `user_management_id` | `str` | 🔵 reused | `user_management_id` | Same shape the existing internal endpoint returns |
-| `document_request_status` | `str` | 🔵 reused | `document_request_status` | — |
-| `status` | `str` | 🟢 added | `status` | Network status: `verified` \| `under_review` \| `suspended` \| … |
-| `last_review_date` | `str \| None` | 🟢 added | `last_review_date` | Auction-side review signal |
-
-*Unchanged, consumed as-is*
-
-| Field | Type | Change | JSON name | Subscriber action |
-| --- | --- | --- | --- | --- |
-| — | route | 🔵 reused | `GET /{company_id}/compliance-statuses` | Left alone — the FE depends on its current contract; do **not** add flags to it |
-| — | DTO | 🔵 reused | `V1EmailNotificationAttachmentDto{name,fileURL,contentType}` | Delivery by reference (URL), not raw bytes; `notification-backend` fetches and attaches |
+| Surface | Change | Note |
+| --- | --- | --- |
+| `GET /{company_id}/compliance-statuses` | 🔵 reused | read for its sharing predicate only; **not called** by the report — the warehouse reads the replicated tables. Healthy in prod (8× 200 / 0 errors in the 3 days to 2026-09-03) |
+| `GET /{company_id}/coi-report` | 🔴 removed | proposed by the 2026-09-02 record; **no longer needed** |
+| Django internal "list a shipper's network" endpoint | 🔴 removed | proposed by the 2026-09-02 record; **no longer needed** |
+| `posting-backend` Reporting report type + Temporal schedule | 🔴 removed | proposed by the 2026-09-02 record; over-engineering against the actual ask |
 
 ## Where it lives & how it's wired
 
 | Aspect | Detail |
 | --- | --- |
-| service | `company-documents` · single-module FastAPI — **branch from `origin/production`, not `master`** (master is stale at `54d57c6`, 2026-04-28) |
-| file | `api/routes/shipper_document_route.py:396-456` (pattern + sharing predicate) · `api/models/shipper_carrier_document.py:9-19` · new alembic migration |
-| instance | `company-documents` · DB `company-documents` (own logical DB, `DATABASE_NAME` default) |
-| service | `platform-backend` · Django 6.0.4 / Python 3.12 |
-| file | `api/internal/network.py:24-39` (sibling endpoint) · `api/compliance_network/common.py:149-190` (queryset) · `compliance_network/models.py:11-80` |
-| instance | `platform` · Cloud SQL Postgres |
-| service | `posting-backend` · Quarkus + Temporal (Option B1) |
-| file | `.../reporting/schedules/impl/ScheduleServiceImpl.java:44-77` · `.../workflows/impl/CreateReportWorkflowImpl.java` · `.../ReportingServiceImpl.java:152,211,225` · `posting-frontend/src/pages/Reporting/` |
-| service | `ml-central-data-storage` · Databricks Asset Bundle (Option A) |
-| table | `gold_{env}_catalog.aaag.aaag_coi_compliance_report` ← silver `company_documents_platform.{carrierdocument,shippercarrierdocument}` + `production_platform.{compliance_network_compliancenetworklink,users_company}`, all `__END_AT IS NULL` |
-| join key | `C-…` user-management id, shared across `users_company.user_management_id`, `posting_core.company.external_id`, and company-documents' `carrier_id`/`shipper_id` |
-| scope key | AAAG parent `external_parent_company_id = 'C-JCJSA2NLCNBDVIMMMM6Z43I52I'` → ~15+ child auction companies |
-| topic | none — no event delta; delivery is REST (`notification-backend`) or a Databricks dashboard |
+| report service | `ml-central-data-storage` · `transformations/gold/Internal_Reports/Aaag_Lmp_Coi_Tracker.py` (new; template `Posted_Vs_Dispatched_Price_Gap.py`, RE-975) |
+| report tests | `ml-central-data-storage` · `transformations/tests/gold/` · pattern `tests/gold/AAAG/gold_gx_aaag.py:27-50` → results to `audit_{env}_catalog` |
+| column-owning service | `company-documents` · `api/models/{carrier_document,shipper_carrier_document}.py` · migration `0fa047cb2bea` · backfill `scripts/backfill_document_metadata.py` |
+| branch to work from | `company-documents` → **`origin/production`** (`4269067`); `ml-central-data-storage` → **`origin/dev`** (`e63fe62`). Both repos' `master` is ~4 months stale and lacks this feature |
+| instance | `platform` (POSTGRES_18, `db-custom-16-40960`) · DB `company_documents` **and** DB `production` — same instance, **different databases** |
+| BI replica | `platform-replica-analytics` (read replica of the `platform` instance) · 6 vCPU · `max_standby_streaming_delay = -1` · carries both databases |
+| BI tool | Metabase — the internal-only support instance (`nginx-internal`; owner recorded as a podLabel in its helm values) |
+| ingestion | Airbyte CDC → GCS Parquet → `bronze_{env}_catalog` · `production` at `0 0 2,14` UTC, `company_documents` at `0 15 2,14` UTC |
+| pipeline refresh | Databricks `ml_central_data_storage_refresh` · `0 0 11,16` GMT · `UNPAUSED` in prod, **`PAUSED`** in staging |
+| topic | none — no Pub/Sub delta |
+| ES index | none — no Elasticsearch delta |
+| jira home | the report belongs under epic **RE-976 "Reporting Requests"**; SCP-15147 correctly owns the `company-documents` backfill prerequisite |
 
 ## Rollout
 
 > ⚠️ **§5 · rollout & sequencing**
 >
-> Data-before-query, then producer-before-consumer. The first step is not optional: every option returns a near-empty report until it is done.
+> Prove the data before materialising anything — a silently under-reporting compliance report is worse than none.
 >
-> 1. **Confirm and run the SCP-14902 backfill in prod.** `SELECT count(*) FROM "CarrierDocument" WHERE type IS NULL`, then `scripts/backfill_document_metadata.py --dry-run`, review the three tallies, re-run for real. There is no log evidence it has run.
-> 2. **Verify the warehouse in parallel** — `DESCRIBE` the four silver tables and `MAX(_ingest_time)` on each; check whether the prod refresh job is still `pause_status: PAUSED` and who owns bronze ingestion. **This decides Option A vs B1.**
-> 3. Add `ShipperCarrierDocument.updated_at` (forward-only, **not retroactive**) — every week it slips is a week of "last reviewed" that can never be recovered.
-> 4. Run the one-off `utils/aaag/coi_report.py` probe to answer AAAG this week and settle the `versions_create_time_list` parse plus the `document_status`/`origin` edge cases.
-> 5. Then the durable path: `coi-report` + the Django network-list endpoint **first** (producers), then the posting report type (consumer). Option A has no cross-service contract and can proceed independently once step 2 passes.
+> 1. **Measure the backfill (blocks every estimate).** `scripts/backfill_document_metadata.py --scan-only` (read-only), then `SELECT count(*) FROM "CarrierDocument" WHERE type IS NULL`. If it has not run, `--dry-run` then run it for real and record its four tallies.
+> 2. **Grant + add the Metabase data source** on `platform-replica-analytics` (parallel with step 1 — each is the other's proof). This **unblocks the report owner this week** and immediately measures backfill coverage against the sample's **443 COI=Yes / 447 upload dates**.
+> 3. **Verify silver reality.** `DESCRIBE` the six silver tables and `SELECT MAX(_ingest_time)`; confirm `type`, `versions_create_time_list`, `expiration_date`, `is_shipper_tracked`, `external_parent_company_id`, `user_management_id` actually landed. Airbyte's `propagate_fully` says they should; silver's schema is auto-inferred, so prove it.
+> 4. **Answer Q1–Q4** (expiration gap · which upload date · which statuses · AAAG-only vs all LMP partners) — these change column semantics, not plumbing.
+> 5. **Add `ShipperCarrierDocument.updated_at`** — independent, do it early, it is not retroactive.
+> 6. **Build the gold view in `dev`**, reconcile against the sample (49 auctions / ~659 rows / ~443 Yes), add the GX suite, then promote to `prod`. **Do not plan a staging sign-off** — staging's library globs exclude `company_documents_platform`, `production_platform` and AAAG gold, and its refresh job is `PAUSED`.
 >
 > **Risk:**
-> - Backfill not run → `type`/`versions_create_time_list` NULL → report silently under-reports rather than failing. Highest risk in the design.
-> - Silver schema is 100% auto-inferred with a single `__START_AT IS NOT NULL` check, and the document transformations predate the SCP-14900 columns by ~4 months — Option A is unsafe until step 2 passes.
-> - `filter_to_granted_carriers` fails open on upstream error (not firing today) — the new endpoint must not inherit it.
-> - Branching `company-documents` from `master` would silently revert SCP-14900/14901/14902/14904/14905.
-> - Option B1 puts a compliance query in the posting domain — a boundary stretch to flag with that service's owner.
+> - **Backfill unevidenced** — three independent 60-day searches found nothing; NULL `type` makes documents *silently absent* rather than flagged. Steps 1–2 exist for this.
+> - **Silver column presence unproven** — silver declares no schema and its only data-quality check is `__START_AT IS NOT NULL`, so nothing would have alerted if the 2026-08 columns never arrived.
+> - **No staging validation path** — validate in `dev`, promote to `prod`.
+> - **Freshness is ~12–24h end to end** (Airbyte twice daily → Databricks twice daily). Ample for a weekly report; do not describe the output as live.
+> - **Delivery is a queryable table, not a pushed file** — `ml-central-data-storage` has no email or export mechanism. A Databricks SQL subscription is a follow-up, not part of this estimate.
+> - **The sample itself is partly corrupt** — one expiration cell reads literally `Oct`, five rows say COI=`No` yet carry dates. Reconciliation must expect the *sample* to be wrong in those places, not the query.
+> - **Tier 2 must not become permanent** — the Metabase grant leaves a manual lookup step. Label it a bridge, or the days-of-support-work problem simply returns in a faster form.
