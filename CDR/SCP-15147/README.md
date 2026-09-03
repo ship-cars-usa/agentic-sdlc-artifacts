@@ -8,6 +8,79 @@
 
 ![Design diagram](./diagram.svg)
 
+## Columns required on the Databricks side
+
+The handoff list for the data team. These are the **source columns the gold view must read** — distinct from the six columns it *emits* (see §2c). All six tables already have silver transformations wired into the `dev` and `prod` pipeline globs, and Airbyte replicates with `propagate_fully`, so this is a **verification checklist first** (`DESCRIBE` each table and confirm presence + `MAX(_ingest_time)`), not a request for new ingestion.
+
+Catalog: `silver_{env}_catalog`. ✅ = drives a report column · 🔑 = join key · ⚙️ = filter/predicate only · ⚠️ = backfill-dependent, see the blocker below.
+
+**`company_documents_platform.carrierdocument`** *(Postgres `company_documents."CarrierDocument"`)*
+
+| Column | Type | Role | Note |
+| --- | --- | --- | --- |
+| `id` | int | 🔑 | → `shippercarrierdocument.carrier_document_id` |
+| `carrier_id` | string | 🔑 | the `C-…` user-management id → `users_company.user_management_id` |
+| `type` | string | ⚙️ ⚠️ | filter `= 'cargo_insurance'` **exactly**. Do **not** use the sibling enum value `'certificate_insurance'` — no route writes it |
+| `document_status` | string | ⚙️ | filter `= 'active'` |
+| `visibility` | string | ⚙️ | `'public'` is one half of the sharing predicate |
+| `versions_create_time_list` | string | ✅ ⚠️ | → **Upload Date**. Comma-joined version timestamps; take `element_at(split(…, ','), -1)` |
+| `created_at` | timestamp | ✅ (fallback) | first-upload date; use only if `versions_create_time_list` is unusable |
+| `expiration_date` | **string** | 🚫 **do not use** | the *carrier's* raw blob-metadata copy. The report's expiration comes from the wrapper table below |
+
+**`company_documents_platform.shippercarrierdocument`** *(Postgres `company_documents."ShipperCarrierDocument"`)*
+
+| Column | Type | Role | Note |
+| --- | --- | --- | --- |
+| `id` | int | ⚙️ | `IS NULL` distinguishes "public doc the auction never engaged with" from a real wrapper row |
+| `carrier_document_id` | int | 🔑 | → `carrierdocument.id` |
+| `shipper_id` | string | 🔑 | the auction's `C-…` id → `users_company.user_management_id` |
+| `status` | string | ⚙️ | `'active'` is the other half of the sharing predicate |
+| `expiration_date` | **timestamp** | ✅ | → **Expiration Date**. Shipper-entered; blank for ~15% of shared COIs, and that blank is meaningful (see Context) |
+| `is_shipper_tracked` | boolean | optional | useful diagnostic: has the auction opted into monitoring this document |
+| `created_at` | timestamp | optional | proxy for "when the auction first engaged with this document" |
+| `updated_at` | timestamp | optional | **does not exist yet** — added by §2a; not retroactive |
+
+**`production_platform.users_company`** *(Django `users_company`; joined **twice** — once as auction, once as carrier)*
+
+| Column | Type | Role | Note |
+| --- | --- | --- | --- |
+| `id` | int | 🔑 | → `compliance_network_compliancenetworklink.shipper_id` / `.carrier_id` |
+| `name` | string | ✅ | → **Auction Name** (auction side) and **Carrier Name** (carrier side) |
+| `user_management_id` | string | 🔑 | the `C-…` id that bridges to `company_documents_platform.*` and `posting_core.company.external_id` |
+| `is_shipper` / `is_carrier` | boolean | ⚙️ | role filters. **Note:** this table has **no `active`/`is_active` column** — use `posting_core.company.active` to exclude inactive auctions |
+
+**`production_platform.compliance_network_compliancenetworklink`** *(defines the report's grain)*
+
+| Column | Type | Role | Note |
+| --- | --- | --- | --- |
+| `shipper_id` | int | 🔑 | unique together with `carrier_id` → one row per (auction, carrier) |
+| `carrier_id` | int | 🔑 | as above |
+| `status` | string | ✅ | → **Status**. Sample contains only `verified` \| `suspended` \| `under_review`; the model also defines `not_verified` and `not_verified_offered` — filter explicitly (Q3) |
+| `document_request_status` | string | optional | `not_requested` \| `requested` \| `granted` — separates "never asked" from "asked, not uploaded" |
+| `last_review_date` | timestamp | optional | `auto_now`, so it moves on **any** save — weak as a review signal |
+
+**`posting_core.company`** *(the auction hierarchy — not available in Django)*
+
+| Column | Type | Role | Note |
+| --- | --- | --- | --- |
+| `external_id` | string | 🔑 | = `users_company.user_management_id` |
+| `external_parent_company_id` | string | ⚙️ | scopes to the parent's child auctions. Prefer matching on the **parent's name** over hard-coding the id, so the report serves all LMP partners (Q4) |
+| `name` | string | ✅ | auction name and parent name (`CASE WHEN external_parent_company_id IS NULL THEN name ELSE parent.name END`) |
+| `active` | boolean | ⚙️ | excludes inactive auctions — the only `active` flag available anywhere in the join |
+
+**Housekeeping columns present on every silver table — required, not optional**
+
+| Column | Role | Note |
+| --- | --- | --- |
+| `__END_AT` | ⚙️ | SCD2 current-record filter. **Every join needs `AND x.__END_AT IS NULL`** or rows fan out across history |
+| `__START_AT` | — | SCD2 validity start; the only column the existing silver GX suites check |
+| `_ab_cdc_deleted_at` | ⚙️ | Airbyte soft-delete. **Every join needs `AND x._ab_cdc_deleted_at IS NULL`** or deleted rows resurface |
+| `_ingest_time` | verification | added by the silver transformation; use `MAX(_ingest_time)` to prove freshness |
+
+> ⚠️ **Two traps for whoever writes the SQL.**
+> 1. **Timestamps arrive as union types.** Airbyte's parquet output makes timestamp columns structs — the existing gold views access them as `col.member0` (e.g. `dispatch_date.member0`, `update_time.member0`). Expect `expiration_date.member0` and `created_at.member0` rather than the bare column.
+> 2. **Two different `expiration_date` columns exist**, one on each document table, with different types and meanings. The report needs the **wrapper's** `timestamp` (shipper-entered), never the carrier document's `string` (raw blob metadata) — using the wrong one would silently diverge from the compliance state the product displays.
+
 ## Context
 
 > **Supersedes the 2026-09-02 record.** On 2026-09-03 the story was updated with `AAAG_LMP_COI Tracker_Reporting Request_Form (1).xlsx` — the org's **Databricks report-request form** plus a **659-row sample report**. It narrows the ask substantially and corrects two facts the earlier record got wrong. Every source fact below was re-verified against the deployed branches.
@@ -121,7 +194,7 @@ So the only new artefact is **one gold materialized view**. No new endpoint, no 
 >
 > 1. **Measure the backfill (blocks every estimate).** `scripts/backfill_document_metadata.py --scan-only` (read-only), then `SELECT count(*) FROM "CarrierDocument" WHERE type IS NULL`. If it has not run, `--dry-run` then run it for real and record its four tallies.
 > 2. **Grant + add the Metabase data source** on `platform-replica-analytics` (parallel with step 1 — each is the other's proof). This **unblocks the report owner this week** and immediately measures backfill coverage against the sample's **443 COI=Yes / 447 upload dates**.
-> 3. **Verify silver reality.** `DESCRIBE` the six silver tables and `SELECT MAX(_ingest_time)`; confirm `type`, `versions_create_time_list`, `expiration_date`, `is_shipper_tracked`, `external_parent_company_id`, `user_management_id` actually landed. Airbyte's `propagate_fully` says they should; silver's schema is auto-inferred, so prove it.
+> 3. **Verify silver reality.** `DESCRIBE` the six silver tables and `SELECT MAX(_ingest_time)`, checking every column in [Columns required on the Databricks side](#columns-required-on-the-databricks-side) — in particular `type`, `versions_create_time_list`, `expiration_date`, `is_shipper_tracked`, `external_parent_company_id`, `user_management_id`. Airbyte's `propagate_fully` says they should; silver's schema is auto-inferred, so prove it.
 > 4. **Answer Q1–Q4** (expiration gap · which upload date · which statuses · AAAG-only vs all LMP partners) — these change column semantics, not plumbing.
 > 5. **Add `ShipperCarrierDocument.updated_at`** — independent, do it early, it is not retroactive.
 > 6. **Build the gold view in `dev`**, reconcile against the sample (49 auctions / ~659 rows / ~443 Yes), add the GX suite, then promote to `prod`. **Do not plan a staging sign-off** — staging's library globs exclude `company_documents_platform`, `production_platform` and AAAG gold, and its refresh job is `PAUSED`.
