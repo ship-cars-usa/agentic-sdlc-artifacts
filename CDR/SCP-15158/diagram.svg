@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 470" width="1200" height="470">
+  <defs>
+    <marker id="g" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><polygon points="0 0, 9 4.5, 0 9" fill="#15803d"/></marker>
+    <marker id="r" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><polygon points="0 0, 9 4.5, 0 9" fill="#b91c1c"/></marker>
+    <marker id="h" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><polygon points="0 0, 9 4.5, 0 9" fill="#b45309"/></marker>
+  </defs>
+  <rect x="0" y="0" width="1200" height="470" fill="#ffffff"/>
+
+  <rect x="16" y="140" width="212" height="126" rx="9" fill="#f5f6f8" stroke="#cbd2d9" stroke-width="1.5"/>
+  <text x="122" y="166" text-anchor="middle" fill="#16191d" font-size="12.5" font-weight="600" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif">FasterPaymentConfiguration</text>
+  <text x="122" y="184" text-anchor="middle" fill="#5c646d" font-size="11" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif">user_models.py:3157-3196</text>
+  <text x="32" y="208" fill="#16191d" font-size="11.5" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace">7 bd &#183; 1%</text>
+  <text x="32" y="226" fill="#16191d" font-size="11.5" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace">3 bd &#183; 2%</text>
+  <text x="32" y="244" fill="#16191d" font-size="11.5" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace">2 bd &#183; 4%</text>
+  <text x="122" y="260" text-anchor="middle" fill="#7a828b" font-size="10.5" font-style="italic" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif">per shipper company</text>
+
+  <rect x="300" y="30" width="336" height="118" rx="9" fill="#eef7f0" stroke="#15803d" stroke-width="1.8"/>
+  <text x="468" y="54" text-anchor="middle" fill="#15803d" font-size="12" font-weight="600" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif">PATH 1 &#183; LOAD-SCOPED</text>
+  <text x="468" y="75" text-anchor="middle" fill="#16191d" font-size="11.5" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace">GET /api/loads|postings/{h}/</text>
+  <text x="468" y="92" text-anchor="middle" fill="#16191d" font-size="11.5" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace">carrier_payments/</text>
+  <text x="468" y="112" text-anchor="middle" fill="#5c646d" font-size="11" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif">CarrierPaymentsMixin &#183; order_api.py:3481</text>
+  <text x="468" y="132" text-anchor="middle" fill="#15803d" font-size="11.5" font-weight="600" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif">has the Load &#8594; can filter server-side</text>
+
+  <rect x="300" y="258" width="336" height="118" rx="9" fill="#fdeeee" stroke="#b91c1c" stroke-width="1.8"/>
+  <text x="468" y="282" text-anchor="middle" fill="#b91c1c" font-size="12" font-weight="600" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif">PATH 2 &#183; SHIPPER-SCOPED</text>
+  <text x="468" y="303" text-anchor="middle" fill="#16191d" font-size="11.5" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace">GET /api/companies/</text>
+  <text x="468" y="320" text-anchor="middle" fill="#16191d" font-size="11.5" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace">faster_payment_configuration/</text>
+  <text x="468" y="340" text-anchor="middle" fill="#5c646d" font-size="11" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif">CompanyViewSet &#183; companies/__init__.py:644</text>
+  <text x="468" y="360" text-anchor="middle" fill="#b91c1c" font-size="11.5" font-weight="600" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif">no Load in the request &#8594; cannot filter</text>
+
+  <path d="M228 178 L266 178 L266 89 L296 89" fill="none" stroke="#15803d" stroke-width="1.8" marker-end="url(#g)"/>
+  <path d="M228 228 L266 228 L266 317 L296 317" fill="none" stroke="#b91c1c" stroke-width="1.8" marker-end="url(#r)"/>
+
+  <rect x="760" y="30" width="424" height="118" rx="9" fill="#f5f6f8" stroke="#cbd2d9" stroke-width="1.5"/>
+  <text x="972" y="54" text-anchor="middle" fill="#16191d" font-size="12.5" font-weight="600" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif">Election UI &#8212; &#8220;Change Your Payment Term&#8221;</text>
+  <text x="972" y="74" text-anchor="middle" fill="#5c646d" font-size="11" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif">SCP-14968 (CTMS) &#183; SCP-14971 (Order Details) &#183; SCP-14972 (ePOD)</text>
+  <text x="972" y="98" text-anchor="middle" fill="#b45309" font-size="11.5" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif">not built yet &#8212; In development</text>
+  <text x="972" y="126" text-anchor="middle" fill="#15803d" font-size="11.5" font-weight="600" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif">fixed entirely by the Django change</text>
+
+  <rect x="760" y="258" width="424" height="118" rx="9" fill="#fbe7d6" stroke="#c2703d" stroke-width="1.8"/>
+  <text x="972" y="282" text-anchor="middle" fill="#16191d" font-size="12.5" font-weight="600" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif">Loadboard / negotiation tooltip + Faster Pay label</text>
+  <text x="972" y="301" text-anchor="middle" fill="#5c646d" font-size="10.5" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif">useFasterPaymentTooltip.tsx:81-89 &#183; FasterPayLabel.tsx:53-63</text>
+  <text x="972" y="320" text-anchor="middle" fill="#5c646d" font-size="10.5" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif">SCP-14956 &#183; SCP-14967 &#8212; already Deployed to QA</text>
+  <text x="972" y="344" text-anchor="middle" fill="#b91c1c" font-size="11.5" font-weight="600" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif">filters is_active only &#8212; needs an FE change</text>
+  <text x="972" y="363" text-anchor="middle" fill="#7a828b" font-size="10.5" font-style="italic" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif">recommended: repoint to path 1</text>
+
+  <path d="M636 89 L756 89" fill="none" stroke="#15803d" stroke-width="1.8" marker-end="url(#g)"/>
+  <path d="M636 317 L756 317" fill="none" stroke="#b91c1c" stroke-width="1.8" stroke-dasharray="5 3" marker-end="url(#r)"/>
+  <path d="M900 254 L900 196 L580 196 L580 152" fill="none" stroke="#b45309" stroke-width="1.6" stroke-dasharray="4 3" marker-end="url(#h)"/>
+  <text x="742" y="188" text-anchor="middle" fill="#b45309" font-size="11" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif">repoint the tooltip to the load-scoped endpoint</text>
+
+  <rect x="16" y="396" width="1168" height="60" rx="8" fill="#fdeeee" stroke="#b91c1c" stroke-width="1.6" stroke-dasharray="5 3"/>
+  <text x="600" y="418" text-anchor="middle" fill="#b91c1c" font-size="12.5" font-weight="600" font-family="system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif">THE TRAP &#8212; apply_faster_payment_fee() overwrites the live payment term with the elected tier&#8217;s term (models.py:5262-5271)</text>
+  <text x="600" y="440" text-anchor="middle" fill="#16191d" font-size="11.5" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace">standard 15 bd &#8594; elect 3 bd &#8594; LIVE term = 3 &#8594; only 2 bd qualifies &#8594; 7 bd unreachable. Compare against payment_term_*_no_fee.</text>
+</svg>

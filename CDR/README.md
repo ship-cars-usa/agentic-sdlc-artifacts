@@ -28,6 +28,7 @@ Keep `Services` slugs matching `codebase-map/repos/<slug>.md` so records stay jo
 | [SCP-15147](SCP-15147/) | proposed | COI report for AAAG — feasibility + effort; blocked on the SCP-14902 backfill |
 | [SCP-15149](SCP-15149/) | proposed | Alarm for Importing Issues — retune the existing ML-parser alarm (SCP-12557) |
 | [SCP-15157](SCP-15157/) | proposed | [Montway][Faster Payments] Differentiate Shipper Revision from Faster Pay — an accepted revision silently reverts carrier pay |
+| [SCP-15158](SCP-15158/) | proposed | [Montway][Faster Payments] Faster Pay options limited to terms lower than the order's — needs an FE surface, not Django alone |
 | [cdr-0007](cdr-0007/) | example | Add expedited flag to CTMS orders (illustrative walkthrough) |
 | [cdr-0008](cdr-0008/) | shipped | Idempotency key on carrier payment transactions |
 | [cdr-0009](cdr-0009/) | proposed | Add DRIVER_REASSIGNED lifecycle event (breaking) |
