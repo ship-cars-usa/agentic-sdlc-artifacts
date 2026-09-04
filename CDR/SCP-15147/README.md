@@ -186,13 +186,145 @@ So the only new artefact is **one gold materialized view**. No new endpoint, no 
 | ES index | none — no Elasticsearch delta |
 | jira home | the report belongs under epic **RE-976 "Reporting Requests"**; SCP-15147 correctly owns the `company-documents` backfill prerequisite |
 
+## Backfill — runbook, rollout & estimate
+
+**No new script is needed.** `scripts/backfill_document_metadata.py` shipped to `origin/production` on 2026-08-07 (`bcbf0f9`) and is idempotent and re-runnable — "rows already in sync are simply rewritten with identical values". Its own docstring defines a four-step rollout, and **the first three are already done**:
+
+| Step (from the script's docstring) | State |
+| --- | --- |
+| 1. `--scan-only` before the migration merges | — no evidence either way, and moot now: the migration is applied |
+| 2. Apply the migration (columns exist, all NULL) | ✅ `3ddc910`, migration `0fa047cb2bea`, 2026-08-07 |
+| 3. Deploy the write-path sync (new/updated documents fill their own columns) | ✅ `apply_document_metadata` at `carrier_document_route.py:82`, `shipper_document_route.py:78` |
+| 4. **`--dry-run`, review, then a real run for the historical rest** | ❌ **no evidence this ever ran in prod** — three independent 60-day log searches, all severities, zero hits |
+
+So the work is **step 4 only**. What follows is the runbook, because that is the part that does not exist yet.
+
+### Step 0 — measure first (read-only, ~5 min)
+
+Against the `company_documents` database (ideally the `platform-replica-analytics` replica, so it costs prod nothing). This is the number that turns the estimate below from a range into a figure:
+
+```sql
+-- Overall coverage. MISSING_FILTER in the script is (type IS NULL AND filename IS NULL).
+SELECT count(*)                                                        AS total_rows,
+       count(*) FILTER (WHERE type IS NULL)                            AS type_null,
+       count(*) FILTER (WHERE type IS NULL AND filename IS NULL)       AS script_backlog,
+       count(*) FILTER (WHERE versions_create_time_list IS NULL)       AS upload_date_null,
+       count(*) FILTER (WHERE created_at <  '2026-08-07')              AS pre_writepath,
+       count(*) FILTER (WHERE created_at >= '2026-08-07')              AS post_writepath
+FROM   "CarrierDocument";
+
+-- Sanity: the write path should have kept everything after 2026-08-07 populated.
+-- A non-zero count here means the write-path sync itself has a gap — investigate
+-- before backfilling, because the backfill would mask it.
+SELECT count(*) FROM "CarrierDocument"
+WHERE  created_at >= '2026-08-07' AND type IS NULL;
+
+-- What the report will actually see today, before any backfill.
+SELECT count(*) AS active_cargo_insurance_docs
+FROM   "CarrierDocument"
+WHERE  type = 'cargo_insurance' AND document_status = 'active';
+```
+
+`script_backlog` is the row count the script will process. `pre_writepath` bounds the true historical backlog — if it is far larger than `type_null`, the backfill has in fact already run and the blocker dissolves.
+
+### Step 1 — the runbook (real flags, verified against source)
+
+Run from the repo root **inside the service's own pod**, so it inherits the pod service account and env (it reads GCS blob metadata per row):
+
+```bash
+# 1. Read-only scan: no schema, no rows touched. Prints the four tallies.
+python -m scripts.backfill_document_metadata --scan-only
+
+# 2. Writes then rolls back. Review the tallies again before committing anything.
+python -m scripts.backfill_document_metadata --dry-run
+
+# 3. The real run. Commits per batch (default 200) and logs
+#    "Committed through document id <N>" so an interrupted run is resumable.
+python -m scripts.backfill_document_metadata --batch-size 200
+```
+
+Constraints the CLI enforces: `--fill-missing` and `--scan-only` are mutually exclusive, and `--limit` is only valid with `--fill-missing`.
+
+### Step 2 — verification
+
+**The four tallies** the script logs on every mode (capture all four in the ticket, before and after):
+
+1. `document_status` values seen — the compliance query only counts `'active'`.
+2. Non-null counts per mapped column — *a systematically-zero column means the field mapping is wrong*, which is the failure this tally exists to catch.
+3. Unmapped blob-metadata keys — `create_time` and `relation_id` are deliberately unmapped (exact duplicates of `created_at`/`id`); anything else is new and needs a decision.
+4. `expiration_date` format buckets (`empty` / `iso_date` / `iso_datetime` / `other`) — decides whether the optional `ALTER COLUMN … TYPE date` follow-up is safe.
+
+**The oracle.** The attached sample is the independent check no tally can give: it lists **443 COI=Yes** and **447 upload dates** across 49 AAAG auctions, compiled by hand from the UI (i.e. from GCS, the source of truth). After the backfill, the AAAG-scoped reconciliation must land near those figures. Because the auction/network side lives in a different database, run that reconciliation **in Databricks** once replication has caught up — it is the same six-table join the gold view uses. A materially lower number means the backfill is still incomplete; a *higher* number is expected and fine (the sample omits `not_verified` carriers, see Q3).
+
+### `--fill-missing` — a separate mode, not step 4
+
+The script's docstring is explicit that this is **"a separate follow-up mode, not a step of the rollout above"**, so it is deliberately not numbered with the three commands above. It has two distinct uses, and for a large backlog it can *replace* the full run rather than follow it:
+
+```bash
+# Reports how many rows are still unfilled, then fills only those. Bounded and repeatable.
+python -m scripts.backfill_document_metadata --fill-missing --limit 500
+```
+
+| Use it… | Why |
+| --- | --- |
+| **After** a full run | Closes gaps left by an interrupted run or transient GCS errors — one short run instead of a full re-scan. |
+| **Instead of** a full run | For a large backlog this is the safer shape: each invocation is bounded by `--limit`, so you take the work in short, attended chunks that contend with live traffic for minutes rather than hours, and you can stop between them. |
+
+> ⚠️ **It is not a complete substitute — check Step 0's two counts first.** `--fill-missing` selects on `MISSING_FILTER`, which is `type IS NULL` **AND** `filename IS NULL` (both conditions). The full run rewrites **every** row. So a document with `type IS NULL` but a populated `filename` is **invisible to `--fill-missing`** and only the full run would fix it. That is exactly why the Step 0 query reports `type_null` and `script_backlog` separately:
+> - `type_null == script_backlog` → `--fill-missing` alone is sufficient; prefer it for a large backlog.
+> - `type_null > script_backlog` → the difference is rows only a **full run** will repair. Do the full run.
+>
+> Two further quirks: `--limit` bounds rows *selected*, not rows filled; and a row the script cannot fill still matches `MISSING_FILTER`, so it is re-selected on every later run — meaning `Unfilled rows remaining` can plateau above zero rather than reach it. Treat a stable plateau as "these rows have no usable blob", not as an incomplete run.
+
+### Rollout strategy
+
+> ℹ️ **Low-risk by construction, with one operational caveat.**
+>
+> 1. **Step 0 measurement** on the replica — read-only, tells you whether there is any work at all.
+> 2. **`--scan-only`**, then **`--dry-run`**, capturing the four tallies each time. Stop here if tally 2 shows a systematically-zero column.
+> 3. **Choose the shape from Step 0's counts.** If `type_null == script_backlog` and the backlog is large, take it in bounded `--fill-missing --limit N` chunks. Otherwise do the **full real run off-peak** in a single pod, watching the `Committed through document id` line for progress.
+> 4. **`--fill-missing --limit N`** afterwards either way, to close gaps from blob-read errors. Repeat until the count stops falling — a plateau above zero means those rows have no usable blob, which is an answer, not a failure.
+> 5. **Re-run the Step 0 queries** and paste before/after into the ticket. Only then estimate the gold view.
+>
+> **Why the risk is low:** GCS stays the source of truth and the script only ever *mirrors* into columns that are currently NULL, so it is additive; it is explicitly idempotent, so a re-run is safe; it commits per batch, so an interruption loses at most one batch and is resumable; and blob-less or erroring rows are counted and skipped rather than failing the run.
+>
+> **No rollback is needed or defined** — and none is really possible, since the pre-state is "NULL" and the post-state is a copy of GCS. If the mapping were wrong, the fix is to correct the mapping and re-run, not to revert. That is exactly what `--scan-only`/`--dry-run` are for.
+>
+> **Operational caveat:** the script runs *inside a serving pod* and does one sequential GCS metadata read per row, on a service that uses sync SQLAlchemy and sync GCS calls inside async handlers, with a DB pool of 10 (+20 overflow). A long run therefore contends with live traffic. Mitigate by running off-peak, keeping `--batch-size` at the default 200, and — for a large backlog — chunking with `--fill-missing --limit` across several short runs rather than one long one.
+>
+> **Risk:** the only real one is *not doing this*. Until it runs, `type` is NULL for pre-2026-08-07 documents, and a `type = 'cargo_insurance'` report omits them **silently** rather than failing — a compliance report that under-reports while looking correct.
+
+### Rough estimate
+
+Runtime is bound by one GCS `list_single_blob` call per row, issued sequentially, so it scales linearly with `script_backlog` from Step 0. In-cluster metadata reads realistically run 50–150 ms each (~7–20 rows/s):
+
+| `script_backlog` (rows with `type IS NULL`) | Expected real-run wall time |
+| --- | --- |
+| ~1 000 | under 3 min |
+| ~10 000 | 10–25 min |
+| ~50 000 | 45 min – 2 h |
+| ~200 000 | 3–8 h — chunk it with `--fill-missing --limit` |
+
+**Engineering effort — 0.5 day**, unchanged from the estimate table below, and independent of the row count:
+
+| Activity | Effort |
+| --- | --- |
+| Step 0 measurement queries | ~15 min |
+| `--scan-only` + `--dry-run` + reading the four tallies | ~1 h |
+| Real run (attended; wall time per the table above, mostly waiting) | ~1–2 h attended |
+| `--fill-missing` passes to zero | ~30 min |
+| Post-run verification + writing the before/after into the ticket | ~1 h |
+| **Total** | **~0.5 day** (+ unattended wall time if the backlog is large) |
+
+There is **no development work** in this line item — the script, the columns and the write path all already exist. It is an operational task, and the right owner is the `company-documents` maintainer who wrote them.
+
 ## Rollout
 
 > ⚠️ **§5 · rollout & sequencing**
 >
 > Prove the data before materialising anything — a silently under-reporting compliance report is worse than none.
 >
-> 1. **Measure the backfill (blocks every estimate).** `scripts/backfill_document_metadata.py --scan-only` (read-only), then `SELECT count(*) FROM "CarrierDocument" WHERE type IS NULL`. If it has not run, `--dry-run` then run it for real and record its four tallies.
+> 1. **Measure the backfill (blocks every estimate).** Follow [Backfill — runbook, rollout & estimate](#backfill--runbook-rollout--estimate): Step 0 measurement queries, then `--scan-only`, `--dry-run`, and the real run, recording the four tallies before and after. **~0.5 day of effort**, plus unattended wall time if the backlog is large.
 > 2. **Grant + add the Metabase data source** on `platform-replica-analytics` (parallel with step 1 — each is the other's proof). This **unblocks the report owner this week** and immediately measures backfill coverage against the sample's **443 COI=Yes / 447 upload dates**.
 > 3. **Verify silver reality.** `DESCRIBE` the six silver tables and `SELECT MAX(_ingest_time)`, checking every column in [Columns required on the Databricks side](#columns-required-on-the-databricks-side) — in particular `type`, `versions_create_time_list`, `expiration_date`, `is_shipper_tracked`, `external_parent_company_id`, `user_management_id`. Airbyte's `propagate_fully` says they should; silver's schema is auto-inferred, so prove it.
 > 4. **Answer Q1–Q4** (expiration gap · which upload date · which statuses · AAAG-only vs all LMP partners) — these change column semantics, not plumbing.
